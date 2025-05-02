@@ -80,10 +80,15 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className='w-full flex flex-col gap-5'>
+        <form
+          autoComplete='on'
+          onSubmit={handleLogin}
+          className='w-full flex flex-col gap-5'
+        >
           <Input
             type='email'
             placeholder='Email'
+            name='email'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className='h-12'
@@ -94,6 +99,7 @@ export default function LoginPage() {
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder='Password'
+              name='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className='h-12'

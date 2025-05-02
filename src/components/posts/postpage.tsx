@@ -1,14 +1,23 @@
 'use client'
 
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { contentService } from '@/services/content'
-import { Post, isRichTextPost } from '@/types/content'
+import {
+  setContentTypes,
+  setError,
+  setLoading,
+  setPosts,
+  setPostTypeId,
+} from '@/store/features/contentSlice'
+import { isRichTextPost, Post } from '@/types/content'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import { Button } from '../ui/button'
+import PageLoadingSpinner from '../ui/PageLoadingSpinner'
 import {
   Table,
   TableBody,
@@ -17,7 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/table'
-import PageLoadingSpinner from '../ui/PageLoadingSpinner'
 
 interface ContentType {
   id: string
@@ -38,13 +46,13 @@ interface ContentResponse {
 }
 
 export default function PostListPage() {
-  const [posts, setPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [contentTypes, setContentTypes] = useState<ContentType[]>([])
+  const dispatch = useAppDispatch()
+  const { posts, loading, error, postTypeId } = useAppSelector(
+    (state) => state.content
+  )
 
   const getContentTypes = async () => {
-    setLoading(true)
+    dispatch(setLoading(true))
 
     const { data, error } = (await contentService.getContentTypes()) as {
       data: { contentTypes: ContentType[] } | null
@@ -52,13 +60,15 @@ export default function PostListPage() {
     }
 
     if (error) {
+      dispatch(setError(error))
       toast.error(error)
     } else if (data?.contentTypes) {
-      setContentTypes(data.contentTypes)
+      dispatch(setContentTypes(data.contentTypes))
 
       const postType = data.contentTypes.find((type) => type.name === 'post')
 
       if (postType) {
+        dispatch(setPostTypeId(postType.id))
         getContents(postType.id)
       }
     }
@@ -73,12 +83,12 @@ export default function PostListPage() {
     }
 
     if (error) {
+      dispatch(setError(error))
       toast.error(error)
-      setError(error)
     } else if (data) {
-      setPosts(data.contents)
+      dispatch(setPosts(data.contents))
     }
-    setLoading(false)
+    dispatch(setLoading(false))
   }
 
   const getContentPreview = (post: Post): string => {
@@ -156,13 +166,15 @@ export default function PostListPage() {
                     </TableCell>
                     <TableCell className='text-right whitespace-nowrap'>
                       <div className='flex items-center justify-end gap-2'>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='text-blue-600 hover:text-blue-700'
-                        >
-                          <FiEdit2 className='h-4 w-4' />
-                        </Button>
+                        <Link href={`/dashboard/${post.id}`}>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='text-blue-600 hover:text-blue-700'
+                          >
+                            <FiEdit2 className='h-4 w-4' />
+                          </Button>
+                        </Link>
                         <Button
                           variant='ghost'
                           size='sm'

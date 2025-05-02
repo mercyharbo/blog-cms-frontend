@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/context/AuthContext'
+import { Providers } from '@/store/provider'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ToastContainer } from 'react-toastify'
@@ -86,21 +87,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-          <ToastContainer
-            position='top-right'
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme='light'
-          />
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            {children}
+            <ToastContainer
+              position='top-right'
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme='light'
+            />
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   )

@@ -21,7 +21,7 @@ import {
 } from 'react-icons/md'
 
 const linksItems = [
-  { href: '/posts', label: 'Posts', icon: <MdArticle /> },
+  { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
   { href: '/categories', label: 'Categories', icon: <BiCategory /> },
   { href: '/authors', label: 'Authors', icon: <FaUsers /> },
   {

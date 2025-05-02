@@ -49,3 +49,27 @@ export function isRichTextPost(post: Post): post is RichTextPost {
 export interface ContentResponse {
   contents: Post[]
 }
+
+export interface ContentType {
+  id: string
+  name: string
+  title: string
+  fields: Array<{
+    name: string
+    type: string
+    title: string
+    required?: boolean
+    options?: any
+  }>
+  created_at: string
+}
+
+export interface ContentStore {
+  contentTypes: ContentType[]
+  loading: boolean
+  error: string | null
+  postTypeId: string | null
+  fetchContentTypes: () => Promise<void>
+  setError: (error: string | null) => void
+  reset: () => void
+}
