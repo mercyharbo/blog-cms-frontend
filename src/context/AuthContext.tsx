@@ -1,0 +1,50 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { createContext, useContext, useEffect, useState } from 'react'
+import Cookies from 'universal-cookie'
+
+interface AuthContextType {
+  isAuthenticated: boolean
+  logout: () => void
+  checkAuth: () => boolean
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const cookies = new Cookies()
+
+  const checkAuth = () => {
+    const token = cookies.get('access_token')
+    setIsAuthenticated(!!token)
+    return !!token
+  }
+
+  const logout = () => {
+    cookies.remove('access_token')
+    cookies.remove('refresh_token')
+    setIsAuthenticated(false)
+    router.push('/')
+  }
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, logout, checkAuth }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
