@@ -42,9 +42,5 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
   //     return <PageLoadingSpinner />
   //   }
 
-  return (
-    <main className='min-h-screen p-6 max-w-4xl mx-auto'>
-      post details for: {postId}
-    </main>
-  )
+  return <main className='p-5'>post details for: {postId}</main>
 }

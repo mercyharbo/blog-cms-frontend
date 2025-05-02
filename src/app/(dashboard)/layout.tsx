@@ -12,7 +12,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <NavMenu />
       <div
         className={`
-          flex-1 p-4 overflow-x-hidden md:p-5 transition-all duration-300 ease-in-out
+          flex-1 p-5 overflow-x-hidden md:p-5 transition-all duration-300 ease-in-out
           ${isCollapsed ? 'lg:ml-20' : 'lg:ml-[280px]'}
         `}
       >
