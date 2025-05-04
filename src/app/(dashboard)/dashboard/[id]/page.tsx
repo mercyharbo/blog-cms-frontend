@@ -14,16 +14,24 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
     `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postTypeId}/${id}`
   ).then((res) => res.json())
 
-  console.log('post', post)
+
+  const contentPreview = post?.data?.content?.substring(0, 160) + '...'
 
   return {
-    title: `${post?.content?.data?.title || 'View Post'} | CMS Dashboard`,
-    description: 'View detailed blog post content',
+    title: `${post?.data?.title || 'View Post'} | CMS Dashboard`,
+    description:
+      contentPreview || 'Read this detailed blog post on our CMS platform',
   }
 }
 
 export default async function PostPage({ params }: { params: { id: string } }) {
   const id = params.id
+    const cookieStore = await cookies()
+    const postTypeId = cookieStore.get('postTypeId')?.value
 
-  return <SinglePostPage postId={id} />
+  if (!postTypeId) {
+    throw new Error('Post type not found')
+  }
+
+  return <SinglePostPage postId={id} postTypeId={postTypeId} />
 }

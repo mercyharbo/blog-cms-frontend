@@ -1,0 +1,137 @@
+'use client'
+
+import imageCompression from 'browser-image-compression'
+import { UploadCloud, X } from 'lucide-react'
+import Image from 'next/image'
+import { useCallback, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { toast } from 'react-toastify'
+import { Button } from './button'
+
+interface ImageUploadProps {
+  value: string
+  onChange: (value: string) => void
+  onRemove: () => void
+}
+
+// Add compression options
+const compressionOptions = {
+  maxSizeMB: 1, // Max size in MB
+  maxWidthOrHeight: 1920, // Max width/height
+  useWebWorker: true,
+}
+
+export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
+  const [loading, setLoading] = useState(false)
+
+  const compressAndConvertToBase64 = async (file: File): Promise<string> => {
+    try {
+      // Compress the image
+      const compressedFile = await imageCompression(file, compressionOptions)
+
+      // Convert to base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(compressedFile)
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = (error) => reject(error)
+      })
+    } catch (error) {
+      console.error('Error compressing image:', error)
+      throw error
+    }
+  }
+
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      try {
+        setLoading(true)
+        const file = acceptedFiles[0]
+
+        if (file.size > 10 * 1024 * 1024) {
+          // 10MB limit
+          toast.error('Image size should be less than 10MB')
+          return
+        }
+
+        const base64String = await compressAndConvertToBase64(file)
+        onChange(base64String)
+        toast.success('Image added successfully')
+      } catch (error) {
+        toast.error('Error processing image')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [onChange]
+  )
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+    },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024, // 5MB
+  })
+
+  return (
+    <div>
+      {value ? (
+        <div className='relative rounded-lg overflow-hidden border border-border'>
+          <div className='aspect-video relative'>
+            <Image
+              src={value}
+              alt='Preview'
+              fill
+              className='object-cover'
+              sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+            />
+          </div>
+          <div className='absolute top-2 right-2 flex gap-2'>
+            <Button
+              type='button'
+              variant='destructive'
+              size='icon'
+              onClick={onRemove}
+              className='h-8 w-8 rounded-full'
+            >
+              <X className='h-4 w-4' />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div
+          {...getRootProps()}
+          className={`
+            border-2 border-dashed rounded-lg p-6 
+            hover:bg-muted/50 transition cursor-pointer
+            ${isDragActive ? 'border-primary' : 'border-muted-foreground/25'}
+            ${loading ? 'pointer-events-none opacity-50' : ''}
+          `}
+        >
+          <input {...getInputProps()} />
+          <div className='flex flex-col items-center justify-center gap-2'>
+            <UploadCloud
+              className={`h-10 w-10 ${loading ? 'animate-bounce' : ''}`}
+            />
+            <div className='text-center'>
+              {loading ? (
+                <p className='text-sm text-muted-foreground'>Processing...</p>
+              ) : (
+                <>
+                  <p className='text-sm font-medium'>
+                    Drag & drop an image here, or click to select
+                  </p>
+                  <p className='text-xs text-muted-foreground mt-1'>
+                    Max file size: 5MB. Supported formats: PNG, JPG, GIF, WEBP
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -9,7 +9,7 @@ import {
   setPosts,
   setPostTypeId,
 } from '@/store/features/contentSlice'
-import { isRichTextPost, Post } from '@/types/content'
+import { ContentResponse, ContentType, Post } from '@/types/content'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useEffect } from 'react'
@@ -26,24 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/table'
-
-interface ContentType {
-  id: string
-  name: string
-  title: string
-  fields: Array<{
-    name: string
-    type: string
-    title: string
-    required?: boolean
-    options?: any
-  }>
-  created_at: string
-}
-
-interface ContentResponse {
-  contents: Post[]
-}
 
 export default function PostListPage() {
   const dispatch = useAppDispatch()
@@ -92,14 +74,13 @@ export default function PostListPage() {
   }
 
   const getContentPreview = (post: Post): string => {
-    if (isRichTextPost(post)) {
-      // For rich text content, we'll just show a placeholder for now
-      // You can enhance this later when rich text editor is implemented
-      return 'Rich text content...'
-    } else {
-      // For plain text, show first 100 characters
-      return post.data.content.substring(0, 100) + '...'
-    }
+    if (!post?.data?.content) return 'No content available'
+
+    // Strip HTML tags and get plain text
+    const plainText = post.data.content.replace(/<[^>]*>/g, '')
+    return plainText.length > 100
+      ? `${plainText.substring(0, 100)}...`
+      : plainText
   }
 
   useEffect(() => {
@@ -115,11 +96,11 @@ export default function PostListPage() {
       {/* Header */}
       <header className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <h1 className='text-2xl font-semibold'>My Blog Posts</h1>
-        <Link href='/create-post'>
+        <Link href='/dashboard/create-post'>
           <Button
             size={'lg'}
             variant={'default'}
-            className='h-12 w-full sm:w-auto'
+            className='h-12 w-full cursor-pointer sm:w-auto'
           >
             <BiPlus /> New Post
           </Button>
@@ -143,17 +124,17 @@ export default function PostListPage() {
             <TableBody>
               {posts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className='text-center py-4'>
+                  <TableCell colSpan={5} className='h-24 text-center'>
                     No posts found
                   </TableCell>
                 </TableRow>
               ) : (
                 posts.map((post) => (
                   <TableRow key={post.id}>
-                    <TableCell className='font-medium'>
-                      <div className='flex flex-col gap-1 max-w-[300px]'>
-                        <h2 className='truncate'>{post.data.title}</h2>
-                        <span className='text-sm text-gray-500 line-clamp-2'>
+                    <TableCell>
+                      <div className='flex flex-col gap-1'>
+                        <span className='font-medium'>{post.data.title}</span>
+                        <span className='text-sm text-muted-foreground'>
                           {getContentPreview(post)}
                         </span>
                       </div>

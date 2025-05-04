@@ -1,5 +1,5 @@
 import PostListPage from '@/components/posts/postpage'
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   return <PostListPage />
 }

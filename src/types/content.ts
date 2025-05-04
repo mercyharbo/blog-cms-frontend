@@ -1,10 +1,6 @@
-// Rich Text Types
-interface RichTextContent {
-  type: 'doc'
-  content: Array<any>
-}
+import { PortableTextBlock } from '@portabletext/types'
 
-// Common Content Fields
+// Base Content Interface
 interface BaseContent {
   id: string
   type_id: string
@@ -12,44 +8,34 @@ interface BaseContent {
   updated_at: string
 }
 
-// First Content Structure (Rich Text)
-interface RichTextPost extends BaseContent {
-  data: {
-    title: string
-    slug: string
-    author: string
-    mainImage: string
-    categories: string[]
-    publishedAt: string
-    body: RichTextContent
-  }
+// Post Data Interface
+export interface PostData {
+  title: string
+  slug: string
+  author: string
+  content: PortableTextBlock[] | string
+  status: 'draft' | 'published'
+  featuredImage: string
+  tags: string[]
+  publishedAt: string
+  metaDescription: string
 }
 
-// Second Content Structure (Plain Text)
-interface PlainTextPost extends BaseContent {
-  data: {
-    title: string
-    slug: string
-    author: string
-    content: string
-    featuredImage: string
-    metaDescription: string
-    publishedAt: string
-    status: 'draft' | 'published'
-    tags: string[]
-  }
+// Complete Post Type
+export interface Post extends BaseContent {
+  data: PostData
 }
 
-export type Post = RichTextPost | PlainTextPost
-
-export function isRichTextPost(post: Post): post is RichTextPost {
-  return 'body' in post.data
-}
-
+// Response Interfaces
 export interface ContentResponse {
   contents: Post[]
 }
 
+export interface ContentDetailsResponse {
+  content: Post
+}
+
+// Content Type Interface
 export interface ContentType {
   id: string
   name: string
@@ -64,6 +50,7 @@ export interface ContentType {
   created_at: string
 }
 
+// Content Store Interface
 export interface ContentStore {
   contentTypes: ContentType[]
   loading: boolean

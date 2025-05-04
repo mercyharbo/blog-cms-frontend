@@ -34,6 +34,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+  /**
+   * The function `handleLogin` is an asynchronous function that handles form submission for user login,
+   * sets cookies with access and refresh tokens upon successful login, and redirects the user to the
+   * dashboard page.
+   * @param e - The parameter `e` in the `handleLogin` function is of type
+   * `React.FormEvent<HTMLFormElement>`. This parameter represents the form event that is triggered when
+   * the form is submitted. In this case, the function is handling the form submission for a login form
+   * in a React application. By
+   */
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
