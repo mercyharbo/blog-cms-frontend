@@ -16,18 +16,12 @@ import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/ui/tag-input'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { contentService } from '@/services/content'
-import {
-  setContentTypes,
-  setError,
-  setLoading,
-  setPostTypeId,
-} from '@/store/features/contentSlice'
-import { ContentType } from '@/types/content'
+import { setContentTypes, setError } from '@/store/features/contentSlice'
+import { ApiResponse, ContentTypesResponse } from '@/types/content'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { toast } from 'react-toastify'
 import slugify from 'slugify'
 import * as z from 'zod'
 
@@ -51,35 +45,31 @@ export default function PostForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
+  const { postTypeId } = useAppSelector((state) => state.content)
   const dispatch = useAppDispatch()
-  const { posts, loading, error, postTypeId } = useAppSelector(
-    (state) => state.content
-  )
 
-  const getContentTypes = async () => {
-    dispatch(setLoading(true))
+  // Wrap with useCallback
+  useEffect(() => {
+    const fetchContentTypes = async () => {
+      try {
+        const response =
+          (await contentService.getContentTypes()) as ApiResponse<ContentTypesResponse>
 
-    const { data, error } = (await contentService.getContentTypes()) as {
-      data: { contentTypes: ContentType[] } | null
-      error: string | null
-    }
+        if (response.error) {
+          dispatch(setError(response.error))
+          return
+        }
 
-    if (error) {
-      dispatch(setError(error))
-      toast.error(error)
-    } else if (data?.contentTypes) {
-      dispatch(setContentTypes(data.contentTypes))
-
-      const postType = data.contentTypes.find((type) => type.name === 'post')
-
-      if (postType) {
-        dispatch(setPostTypeId(postType.id))
+        if (response.data?.contentTypes) {
+          dispatch(setContentTypes(response.data.contentTypes))
+        }
+      } catch (err) {
+        console.error('Failed to fetch content types:', err)
+        dispatch(setError('Failed to fetch content types'))
       }
     }
-  }
 
-  useEffect(() => {
-    getContentTypes()
+    fetchContentTypes()
   }, [dispatch])
 
   const form = useForm<CreatePostData>({
@@ -105,58 +95,51 @@ export default function PostForm() {
   }
 
   // Usage in PostForm.tsx
-  const handleSubmit = async (formData: CreatePostData) => {
-    try {
-      setIsSubmitting(true)
+  // const handleSubmit = async (formData: CreatePostData) => {
+  //   try {
+  //     setIsSubmitting(true)
 
-      if (!postTypeId) {
-        toast.error('Post type not found')
-        return
-      }
+  //     if (!postTypeId) {
+  //       toast.error('Post type not found')
+  //       return
+  //     }
 
-      // Clean up the data before sending
-      const cleanData = {
-        ...formData,
-        tags: Array.isArray(formData.tags) ? formData.tags : [],
-        publishedAt: new Date().toISOString(),
-        // Ensure all fields are in correct format
-        status: formData.status || 'draft',
-        featuredImage: formData.featuredImage || '',
-        metaDescription: formData.metaDescription || '',
-      }
+  //     // Clean up the data before sending
+  //     const cleanData = {
+  //       ...formData,
+  //       tags: Array.isArray(formData.tags) ? formData.tags : [],
+  //       publishedAt: new Date().toISOString(),
+  //       // Ensure all fields are in correct format
+  //       status: formData.status || 'draft',
+  //       featuredImage: formData.featuredImage || '',
+  //       metaDescription: formData.metaDescription || '',
+  //     }
 
-      const { error } = await contentService.createContent(
-        postTypeId,
-        cleanData
-      )
+  //     const { error } = await contentService.createContent(
+  //       postTypeId,
+  //       cleanData
+  //     )
 
-      if (error) {
-        toast.error(error)
-        return
-      }
+  //     if (error) {
+  //       toast.error(error)
+  //       return
+  //     }
 
-      toast.success('Post created successfully')
-      router.push('/dashboard')
-    } catch (error) {
-      console.error('Submission error:', error)
-      toast.error('Failed to create post')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Load content types on mount if not already loaded
-  useEffect(() => {
-    if (!postTypeId) {
-      getContentTypes()
-    }
-  }, [])
+  //     toast.success('Post created successfully')
+  //     router.push('/dashboard')
+  //   } catch (error) {
+  //     console.error('Submission error:', error)
+  //     toast.error('Failed to create post')
+  //   } finally {
+  //     setIsSubmitting(false)
+  //   }
+  // }
 
   return (
     <main className='min-h-screen flex flex-col gap-5 p-4 md:p-6'>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleSubmit)}
+          // onSubmit={form.handleSubmit(handleSubmit)}
           className='w-full mx-auto flex flex-col gap-5 lg:w-2/3'
         >
           <FormField
@@ -263,7 +246,7 @@ export default function PostForm() {
           <FormField
             control={form.control}
             name='featuredImage'
-            render={({ field: { onChange, value, ...rest } }) => (
+            render={({ field: { onChange, value } }) => (
               <FormItem>
                 <FormLabel>Featured Image</FormLabel>
                 <FormControl>

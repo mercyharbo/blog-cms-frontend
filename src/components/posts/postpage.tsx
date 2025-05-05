@@ -1,7 +1,7 @@
 'use client'
 
+import { getContent, getContentTypes } from '@/api/contentReq'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { contentService } from '@/services/content'
 import {
   setContentTypes,
   setError,
@@ -9,7 +9,7 @@ import {
   setPosts,
   setPostTypeId,
 } from '@/store/features/contentSlice'
-import { ContentResponse, ContentType, Post } from '@/types/content'
+import { ContentType, Post } from '@/types/content'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useEffect } from 'react'
@@ -27,73 +27,104 @@ import {
   TableRow,
 } from '../ui/table'
 
+interface TextNode {
+  text: string
+}
+
+interface ContentBlock {
+  children?: TextNode[]
+}
+
 export default function PostListPage() {
   const dispatch = useAppDispatch()
-  const { posts, loading, error, postTypeId } = useAppSelector(
-    (state) => state.content
-  )
+  const { posts, loading } = useAppSelector((state) => state.content)
 
-  const getContentTypes = async () => {
+  const contentTypeReq = async () => {
     dispatch(setLoading(true))
 
-    const { data, error } = (await contentService.getContentTypes()) as {
-      data: { contentTypes: ContentType[] } | null
-      error: string | null
-    }
+    try {
+      const data = await getContentTypes()
 
-    if (error) {
-      dispatch(setError(error))
-      toast.error(error)
-    } else if (data?.contentTypes) {
-      dispatch(setContentTypes(data.contentTypes))
+      if (data?.data?.error) {
+        dispatch(setError(data.data.error))
+        toast.error(data.data.error)
+      } else if (data?.data?.contentTypes) {
+        dispatch(setContentTypes(data.data.contentTypes))
 
-      const postType = data.contentTypes.find((type) => type.name === 'post')
+        const postType: ContentType | undefined = data.data.contentTypes.find(
+          (type: ContentType) => type.name === 'post'
+        )
 
-      if (postType) {
-        dispatch(setPostTypeId(postType.id))
-        getContents(postType.id)
+        if (postType) {
+          dispatch(setPostTypeId(postType.id))
+          getPostContents(postType.id)
+        }
       }
+    } catch (error) {
+      let errorMsg = 'An error occurred while fetching content types'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+      dispatch(setError(errorMsg))
+      toast.error(errorMsg)
     }
   }
 
-  const getContents = async (contentTypeId: string) => {
-    const { data, error } = (await contentService.getContent(
-      contentTypeId
-    )) as {
-      data: ContentResponse | null
-      error: string | null
-    }
+  const getPostContents = async (contentTypeId: string) => {
+    try {
+      const data = await getContent(contentTypeId)
 
-    if (error) {
-      dispatch(setError(error))
-      toast.error(error)
-    } else if (data) {
-      dispatch(setPosts(data.contents))
+      if (data.data.error) {
+        dispatch(setError(data.data.error))
+        toast.error(data.data.error)
+      } else if (data) {
+        dispatch(setPosts(data.data.contents))
+      }
+      dispatch(setLoading(false))
+    } catch (error) {
+      let errorMsg = 'An error occurred while fetching content'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+      dispatch(setError(errorMsg))
+      toast.error(errorMsg)
     }
-    dispatch(setLoading(false))
   }
 
   const getContentPreview = (post: Post): string => {
     if (!post?.data?.content) return 'No content available'
 
     // Strip HTML tags and get plain text
-    const plainText = post.data.content.replace(/<[^>]*>/g, '')
+    const content = post.data.content
+
+    const plainText: string =
+      typeof content === 'string'
+        ? content.replace(/<[^>]*>/g, '')
+        : (content as ContentBlock[])
+            .map((block) =>
+              block.children?.map((child) => child.text).join(' ')
+            )
+            .join(' ')
     return plainText.length > 100
       ? `${plainText.substring(0, 100)}...`
       : plainText
   }
 
   useEffect(() => {
-    getContentTypes()
-  }, [])
+    contentTypeReq()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch])
 
   if (loading) {
     return <PageLoadingSpinner />
   }
 
   return (
-    <main className='min-h-screen flex flex-col gap-5 p-4 md:p-6'>
-      {/* Header */}
+    <main className='flex flex-col gap-5 space-y-10 w-full'>
       <header className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <h1 className='text-2xl font-semibold'>My Blog Posts</h1>
         <Link href='/dashboard/create-post'>
@@ -107,70 +138,71 @@ export default function PostListPage() {
         </Link>
       </header>
 
-      {/* Table container with Tailwind utilities */}
-      <div className='w-full border rounded-md'>
-        <div className='scrollbar-hide w-full overflow-x-auto'>
-          <Table className='w-full'>
-            <TableHeader>
+      <div className='overflow-x-auto scrollbar-hide w-full border rounded-md'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className='w-[40%]'>Title</TableHead>
+              <TableHead className='w-[20%]'>Author</TableHead>
+              <TableHead className='w-[20%]'>Last Updated</TableHead>
+              <TableHead className='w-[20%] text-right'>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {posts.length === 0 ? (
               <TableRow>
-                <TableHead className='min-w-[200px]'>Title</TableHead>
-                <TableHead className='min-w-[100px]'>Author</TableHead>
-                <TableHead className='min-w-[120px]'>Last Updated</TableHead>
-                <TableHead className='min-w-[100px] text-right'>
-                  Actions
-                </TableHead>
+                <TableCell colSpan={5} className='h-24 text-center'>
+                  No posts found
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {posts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className='h-24 text-center'>
-                    No posts found
+            ) : (
+              posts.map((post) => (
+                <TableRow key={post.id}>
+                  <TableCell>
+                    <div className='flex flex-col gap-1'>
+                      <span className='font-medium truncate'>
+                        {post.data.title}
+                      </span>
+                      <span className='text-sm text-muted-foreground truncate'>
+                        {getContentPreview(post)}
+                      </span>
+                    </div>
                   </TableCell>
-                </TableRow>
-              ) : (
-                posts.map((post) => (
-                  <TableRow key={post.id}>
-                    <TableCell>
-                      <div className='flex flex-col gap-1'>
-                        <span className='font-medium'>{post.data.title}</span>
-                        <span className='text-sm text-muted-foreground'>
-                          {getContentPreview(post)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className='whitespace-nowrap'>
+                  <TableCell>
+                    <span className='truncate'>
                       {post.data.author || 'John Doe'}
-                    </TableCell>
-                    <TableCell className='whitespace-nowrap'>
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className='truncate'>
                       {format(new Date(post.updated_at), 'MMM dd, yyyy')}
-                    </TableCell>
-                    <TableCell className='text-right whitespace-nowrap'>
-                      <div className='flex items-center justify-end gap-2'>
-                        <Link href={`/dashboard/${post.id}`}>
-                          <Button
-                            variant='ghost'
-                            size='sm'
-                            className='text-blue-600 hover:text-blue-700'
-                          >
-                            <FiEdit2 className='h-4 w-4' />
-                          </Button>
-                        </Link>
+                    </span>
+                  </TableCell>
+                  <TableCell className='text-right'>
+                    <div className='flex items-center justify-end gap-2'>
+                      <Link href={`/dashboard/${post.id}`}>
                         <Button
                           variant='ghost'
                           size='sm'
-                          className='text-red-600 hover:text-red-700'
+                          className='text-blue-600 hover:text-blue-700'
                         >
-                          <FiTrash2 className='h-4 w-4' />
+                          <FiEdit2 className='h-4 w-4' />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                      </Link>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className='text-red-600 hover:text-red-700'
+                      >
+                        <FiTrash2 className='h-4 w-4' />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </main>
   )

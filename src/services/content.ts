@@ -2,17 +2,17 @@ import { fetchApi } from '@/lib/fetch'
 import { ContentResponse } from '@/types/content'
 
 // Add interface for post data
-interface CreatePostData {
-  title: string
-  slug: string
-  author: string
-  content: string
-  status: 'draft' | 'published'
-  featuredImage?: string
-  tags: string[]
-  publishedAt: string
-  metaDescription: string
-}
+// interface CreatePostData {
+//   title: string
+//   slug: string
+//   author: string
+//   content: string
+//   status: 'draft' | 'published'
+//   featuredImage?: string
+//   tags: string[]
+//   publishedAt: string
+//   metaDescription: string
+// }
 
 export const contentService = {
   getContentTypes: async () => {
@@ -31,13 +31,13 @@ export const contentService = {
       method: 'GET',
       requireAuth: true,
     }),
-  createContent: (contentTypeId: string, postData: CreatePostData) =>
-    fetchApi<ContentResponse>(`/api/content/${contentTypeId}`, {
-      method: 'POST',
-      requireAuth: true,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: postData,
-    }),
+  // createContent: (contentTypeId: string, postData: CreatePostData) =>
+  //   fetchApi<ContentResponse>(`/api/content/${contentTypeId}`, {
+  //     method: 'POST',
+  //     requireAuth: true,
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: postData,
+  //   }),
 }

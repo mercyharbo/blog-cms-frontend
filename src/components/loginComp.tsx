@@ -1,33 +1,16 @@
 'use client'
 
-import { authService } from '@/services/auth'
-
+import { postUserLogin } from '@/api/authReq'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
-import Cookies from 'universal-cookie'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 
-interface LoginResponse {
-  message: string
-  session: {
-    access_token: string
-    expires_in: number
-    expires_at: number
-    refresh_token: string
-  }
-  user: {
-    email: string
-    id: string
-  }
-}
-
 export default function LoginPage() {
   const router = useRouter()
-  const cookiestore = new Cookies()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,34 +30,27 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { data, error } = (await authService.login({
-      email,
-      password,
-    })) as { data: LoginResponse | null; error: string | null }
+    try {
+      const data = await postUserLogin(email, password)
 
-    if (error) {
-      toast.error(error)
-    } else if (data) {
-      cookiestore.set('access_token', data.session.access_token, {
-        expires: new Date(data.session.expires_at * 1000),
-        secure: true,
-        sameSite: 'strict',
-      })
+      if (data?.session) {
+        toast.success(data.message)
+        router.push('/dashboard')
+      } else {
+        toast.error(data?.message || 'Login failed')
+      }
+    } catch (error) {
+      let errorMsg = 'An error occurred while fetching content types'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
 
-      const refreshTokenExpiry = new Date(data.session.expires_at * 1000)
-      refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7)
-
-      cookiestore.set('refresh_token', data.session.refresh_token, {
-        expires: refreshTokenExpiry,
-        secure: true,
-        sameSite: 'strict',
-      })
-
-      toast.success(data.message)
-      router.push('/dashboard')
+      toast.error(errorMsg)
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
@@ -137,7 +113,7 @@ export default function LoginPage() {
         </form>
 
         <p className='text-center text-gray-600 flex items-center justify-center gap-1'>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href='/signup' className='text-blue-600 hover:underline'>
             Sign up
           </Link>

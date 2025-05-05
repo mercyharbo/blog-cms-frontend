@@ -1,8 +1,8 @@
 // src/types/index.ts
 
 export interface MenuItemProps {
-    label: string;
-    link: string;
+  label: string
+  link: string
 }
 
 export interface SignupData {
@@ -28,6 +28,4 @@ export interface Session {
 export interface AuthToken {
   token: string | null
   isAuthenticated: boolean
-  getToken: () => string | null
-  removeToken: () => void
 }

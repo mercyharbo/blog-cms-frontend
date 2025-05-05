@@ -1,6 +1,5 @@
 'use client'
 
-import imageCompression from 'browser-image-compression'
 import { UploadCloud, X } from 'lucide-react'
 import Image from 'next/image'
 import { useCallback, useState } from 'react'
@@ -14,32 +13,16 @@ interface ImageUploadProps {
   onRemove: () => void
 }
 
-// Add compression options
-const compressionOptions = {
-  maxSizeMB: 1, // Max size in MB
-  maxWidthOrHeight: 1920, // Max width/height
-  useWebWorker: true,
-}
-
 export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
   const [loading, setLoading] = useState(false)
 
-  const compressAndConvertToBase64 = async (file: File): Promise<string> => {
-    try {
-      // Compress the image
-      const compressedFile = await imageCompression(file, compressionOptions)
-
-      // Convert to base64
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.readAsDataURL(compressedFile)
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = (error) => reject(error)
-      })
-    } catch (error) {
-      console.error('Error compressing image:', error)
-      throw error
-    }
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
   }
 
   const onDrop = useCallback(
@@ -49,16 +32,18 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
         const file = acceptedFiles[0]
 
         if (file.size > 10 * 1024 * 1024) {
-          // 10MB limit
           toast.error('Image size should be less than 10MB')
           return
         }
 
-        const base64String = await compressAndConvertToBase64(file)
+        const base64String = await convertToBase64(file)
         onChange(base64String)
         toast.success('Image added successfully')
-      } catch (error) {
-        toast.error('Error processing image')
+      } catch (err) {
+        console.error('Image processing error:', err)
+        toast.error(
+          err instanceof Error ? err.message : 'Failed to process image'
+        )
       } finally {
         setLoading(false)
       }
@@ -72,7 +57,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
     maxFiles: 1,
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 10 * 1024 * 1024, // 10MB
   })
 
   return (
@@ -124,7 +109,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
                     Drag & drop an image here, or click to select
                   </p>
                   <p className='text-xs text-muted-foreground mt-1'>
-                    Max file size: 5MB. Supported formats: PNG, JPG, GIF, WEBP
+                    Max file size: 10MB. Supported formats: PNG, JPG, GIF, WEBP
                   </p>
                 </>
               )}

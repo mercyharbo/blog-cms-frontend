@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { contentService } from '@/services/content'
 import {
@@ -9,7 +11,9 @@ import {
 } from '@/store/features/contentSlice'
 import { ContentDetailsResponse } from '@/types/content'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useEffect } from 'react'
+import { FiCalendar, FiEdit2, FiUser } from 'react-icons/fi'
 import ReactMarkdown from 'react-markdown'
 import { toast } from 'react-toastify'
 import rehypeRaw from 'rehype-raw'
@@ -49,109 +53,128 @@ export default function SinglePostPage({
     dispatch(setLoading(false))
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     getContentsDetails()
-  }, [])
+  }, [dispatch])
 
   if (loading || !currentPost) {
     return <PageLoadingSpinner />
   }
 
-  return (
-    <div className='min-h-screen bg-gray-50'>
-      {/* Top Bar */}
-      <header className='sticky top-0 z-10 bg-white border-b px-6 py-4'>
-        <div className='flex items-center justify-between'>
-          <h1 className='text-2xl font-semibold text-gray-800'>
-            {currentPost.data.title}
-          </h1>
-          <div className='flex items-center gap-4'>
-            <button className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'>
-              Edit Post
-            </button>
-          </div>
-        </div>
-      </header>
+  console.log('currentPost', currentPost)
 
+  return (
+    <main className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
       <BreadcrumbNav />
 
-      <main className='p-6 max-w-4xl mx-auto'>
-        <div className='bg-white rounded-lg shadow-sm'>
-          {currentPost?.data?.featuredImage && (
-            <div className='relative w-full h-[400px] border-b'>
-              <Image
-                src={currentPost.data.featuredImage}
-                alt={currentPost.data.title || 'Featured image'}
-                fill
-                className='object-cover rounded-t-lg'
-                priority
-                sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-                // Add error handling for image loading failures
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  target.src = '/placeholder-image.jpg'
-                }}
-              />
-            </div>
-          )}
-
-          <article className='prose prose-lg max-w-none p-6'>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw, rehypeSanitize]}
-              components={{
-                h1: ({ children }) => (
-                  <h1 className='text-4xl font-bold my-6'>{children}</h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className='text-3xl font-bold my-5'>{children}</h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className='text-2xl font-bold my-4'>{children}</h3>
-                ),
-                p: ({ children }) => (
-                  <p className='my-4 text-gray-700 leading-relaxed'>
-                    {children}
-                  </p>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote className='border-l-4 border-primary pl-4 my-6 italic bg-gray-50 py-2'>
-                    {children}
-                  </blockquote>
-                ),
-                strong: ({ children }) => (
-                  <strong className='font-bold text-primary'>{children}</strong>
-                ),
-                img: ({ src, alt }) => (
-                  <div className='relative w-full h-[400px] my-6'>
-                    <Image
-                      src={
-                        typeof src === 'string' ? src : '/placeholder-image.jpg'
-                      }
-                      alt={alt || ''}
-                      fill
-                      className='object-cover rounded-lg'
-                    />
-                  </div>
-                ),
-                code: ({ className, children }) => (
-                  <code
-                    className={`${
-                      className || ''
-                    } block bg-gray-800 text-white p-4 rounded-lg`}
-                  >
-                    {children}
-                  </code>
-                ),
-              }}
-            >
-              {typeof currentPost.data.content === 'string'
-                ? currentPost.data.content
-                : JSON.stringify(currentPost.data.content)}
-            </ReactMarkdown>
-          </article>
+      <div className='py-6 space-y-4'>
+        <div className='flex items-center justify-between gap-4'>
+          <h1 className='text-4xl font-bold tracking-tight text-foreground'>
+            {currentPost?.data?.title}
+          </h1>
+          <Link href={`/dashboard/posts/${postId}/edit`} passHref>
+            <Button variant='default' size='sm' className='gap-2'>
+              <FiEdit2 className='h-4 w-4' />
+              Edit Post
+            </Button>
+          </Link>
         </div>
-      </main>
-    </div>
+
+        <div className='flex flex-wrap items-center gap-4 text-sm text-muted-foreground'>
+          <div className='flex items-center gap-2'>
+            <FiUser className='h-4 w-4' />
+            <span>{currentPost?.data?.author}</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            <FiCalendar className='h-4 w-4' />
+            <time>
+              {new Date(currentPost?.data?.publishedAt).toLocaleDateString(
+                'en-US',
+                {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }
+              )}
+            </time>
+          </div>
+          <Badge
+            variant={
+              currentPost?.data?.status === 'published'
+                ? 'default'
+                : 'secondary'
+            }
+            className='capitalize'
+          >
+            {currentPost?.data?.status}
+          </Badge>
+          <div className='flex flex-wrap gap-2'>
+            {currentPost?.data?.tags.map((tag) => (
+              <Badge key={tag} variant='outline' className='capitalize'>
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <article className='prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-blockquote:border-primary prose-strong:text-primary'>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          components={{
+            h1: ({ children }) => (
+              <h1 className='text-4xl font-bold my-6 animate-in fade-in-50'>
+                {children}
+              </h1>
+            ),
+            h2: ({ children }) => (
+              <h2 className='text-3xl font-bold my-5 animate-in fade-in-50'>
+                {children}
+              </h2>
+            ),
+            h3: ({ children }) => (
+              <h3 className='text-2xl font-bold my-4 animate-in fade-in-50'>
+                {children}
+              </h3>
+            ),
+            p: ({ children }) => (
+              <p className='my-4 leading-relaxed animate-in fade-in-50'>
+                {children}
+              </p>
+            ),
+            blockquote: ({ children }) => (
+              <blockquote className='border-l-4 pl-4 my-6 italic bg-muted/50 py-2 rounded-sm animate-in slide-in-from-left'>
+                {children}
+              </blockquote>
+            ),
+            strong: ({ children }) => (
+              <strong className='font-bold text-primary'>{children}</strong>
+            ),
+            img: ({ src, alt }) => (
+              <div className='relative w-full h-[400px] my-6 rounded-lg overflow-hidden animate-in zoom-in-50'>
+                <Image
+                  src={String(src || '/placeholder-image.jpg')}
+                  alt={alt || 'Blog image'}
+                  fill
+                  className='object-cover rounded-lg hover:scale-105 transition-transform duration-300'
+                  unoptimized={
+                    typeof src === 'string' && src.startsWith('data:')
+                  }
+                />
+              </div>
+            ),
+            code: ({ children }) => (
+              <code className='block bg-muted p-4 rounded-lg overflow-x-auto'>
+                {children}
+              </code>
+            ),
+          }}
+        >
+          {currentPost?.data?.content || ''}
+        </ReactMarkdown>
+      </article>
+    </main>
   )
 }

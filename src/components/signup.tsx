@@ -1,6 +1,6 @@
 'use client'
 
-import { authService } from '@/services/auth'
+import { postUserRegister } from '@/api/authReq'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
@@ -17,8 +17,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   /**
-   * The `handleSignup` function is an asynchronous function that handles form submission for user signup
-   * in a TypeScript React application.
+   * The handleSignup function is an asynchronous function that handles form submission for user
+   * registration, displaying success or error messages accordingly.
    * @param e - The parameter `e` in the `handleSignup` function is of type
    * `React.FormEvent<HTMLFormElement>`. This parameter represents the form event that is triggered when
    * the form is submitted. In this case, the function is handling the form submission for a signup form
@@ -28,19 +28,27 @@ export default function SignupPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { data, error } = await authService.signup({
-      email,
-      password,
-    })
+    try {
+      const data = await postUserRegister(email, password)
 
-    if (error) {
-      toast.error(error)
-    } else if (data) {
-      toast.success('Account created successfully! Please login to continue.')
-      router.push('/')
+      if (data?.error) {
+        toast.error(data.error)
+      } else if (data) {
+        toast.success('Account created successfully! Please login to continue.')
+        router.push('/')
+      }
+    } catch (error) {
+      let errorMsg = 'An error occurred while fetching content types'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+
+      toast.error(errorMsg)
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (

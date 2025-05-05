@@ -1,7 +1,14 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import Cookies from 'universal-cookie'
 
 interface AuthContextType {
@@ -15,24 +22,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const cookies = new Cookies()
+  const cookies = useMemo(() => new Cookies(), [])
 
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     const token = cookies.get('access_token')
     setIsAuthenticated(!!token)
     return !!token
-  }
+  }, [cookies])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     cookies.remove('access_token')
     cookies.remove('refresh_token')
     setIsAuthenticated(false)
     router.push('/')
-  }
+  }, [cookies, router])
 
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, logout, checkAuth }}>

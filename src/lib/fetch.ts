@@ -2,7 +2,8 @@ type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
 interface FetchOptions {
   method?: RequestMethod
-  body?: any
+  // Replace 'any' with a more specific type
+  body?: Record<string, unknown> | string | FormData | null
   headers?: HeadersInit
   cache?: RequestCache
   revalidate?: number
@@ -30,7 +31,7 @@ export async function fetchApi<T>(
   try {
     const requestHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...headers as Record<string, string>,
+      ...(headers as Record<string, string>),
     }
 
     // Add auth token if required

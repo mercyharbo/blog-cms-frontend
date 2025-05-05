@@ -2,22 +2,12 @@
 
 import NavMenu from '@/components/NavMenu'
 import { AuthProvider } from '@/context/AuthContext'
-import { NavigationProvider, useNavigation } from '@/context/NavigationContext'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { isCollapsed } = useNavigation()
-
   return (
-    <main className='flex min-h-screen'>
+    <main className='flex h-screen w-full overflow-hidden bg-gray-50'>
       <NavMenu />
-      <div
-        className={`
-          flex-1 p-5 overflow-x-hidden md:p-5 transition-all duration-300 ease-in-out
-          ${isCollapsed ? 'lg:ml-20' : 'lg:ml-[280px]'}
-        `}
-      >
-        {children}
-      </div>
+      <div className='flex-1 overflow-auto p-6'>{children}</div>
     </main>
   )
 }
@@ -29,9 +19,7 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthProvider>
-      <NavigationProvider>
-        <DashboardContent>{children}</DashboardContent>
-      </NavigationProvider>
+      <DashboardContent>{children}</DashboardContent>
     </AuthProvider>
   )
 }

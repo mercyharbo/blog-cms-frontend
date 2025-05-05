@@ -1,6 +1,7 @@
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
-import { EditorContent, useEditor } from '@tiptap/react'
+import type { EditorView } from '@tiptap/pm/view'
+import { Editor, EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
   Bold,
@@ -36,6 +37,36 @@ export default function RichTextEditor({
   content,
   onChange,
 }: RichTextEditorProps) {
+  const convertToMarkdown = (editor: Editor): string => {
+    const json = editor.getJSON()
+    let markdown = ''
+
+    json.content?.forEach((node) => {
+      if (node.type === 'paragraph') {
+        // Handle regular text
+        const text = node.content
+          ?.map((item) => {
+            if (item.type === 'text') return item.text
+            if (item.type === 'hardBreak') return '\n'
+            return ''
+          })
+          .join('')
+        markdown += text + '\n\n'
+      } else if (node.type === 'image') {
+        // For base64 images, we need to preserve the full data URL
+        const imageUrl = node.attrs?.src || ''
+        markdown += `![image](${imageUrl})\n\n`
+      } else if (node.type === 'heading') {
+        // Handle headings
+        const level = '#'.repeat(node.attrs?.level || 1)
+        const text = node.content?.map((item) => item.text || '').join('')
+        markdown += `${level} ${text}\n\n`
+      }
+    })
+
+    return markdown.trim()
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -48,14 +79,15 @@ export default function RichTextEditor({
         },
       }),
     ],
-    content: typeof content === 'string' ? JSON.parse(content) : content,
+    // Fix: Don't parse content if it's a string
+    content: content || '',
     onUpdate: ({ editor }) => {
-      // Convert editor content to Portable Text blocks
-      const portableTextBlocks = editor.getJSON()
-      onChange(JSON.stringify(portableTextBlocks))
+      const markdown = convertToMarkdown(editor)
+      console.log('Content with images:', markdown) // Check this output
+      onChange(markdown)
     },
     editorProps: {
-      handlePaste: (view, event) => {
+      handlePaste: (view: EditorView, event: ClipboardEvent) => {
         const items = Array.from(event.clipboardData?.items || [])
         const imageItem = items.find((item) => item.type.startsWith('image/'))
 
@@ -67,7 +99,7 @@ export default function RichTextEditor({
         }
         return false
       },
-      handleDrop: (view, event) => {
+      handleDrop: (view: EditorView, event: DragEvent) => {
         const hasFiles = event.dataTransfer?.files.length
         if (!hasFiles) return false
 
@@ -82,7 +114,7 @@ export default function RichTextEditor({
   })
 
   // Add helper function to handle image files
-  const handleImageFile = async (file: File, view: any) => {
+  const handleImageFile = async (file: File, view: EditorView) => {
     try {
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
@@ -248,4 +280,14 @@ export default function RichTextEditor({
       `}</style>
     </div>
   )
+}
+
+interface EditorProps {
+  children: React.ReactNode
+  className?: string
+}
+
+// Replace any with proper type
+export const EditorComponent = ({ children, className }: EditorProps) => {
+  return <div className={className}>{children}</div>
 }
