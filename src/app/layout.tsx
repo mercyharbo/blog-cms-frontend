@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { AuthProvider } from '@/context/AuthContext'
 import { Providers } from '@/store/provider'
 import type { Metadata } from 'next'
@@ -83,13 +84,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en'>
+    <html lang='en' suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
           <AuthProvider>
-            {children}
+            <ThemeProvider>{children}</ThemeProvider>
             <ToastContainer
               position='top-right'
               autoClose={3000}

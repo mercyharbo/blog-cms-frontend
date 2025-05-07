@@ -1,5 +1,6 @@
 'use client'
 
+import { createContent, getContentTypes, updateContent } from '@/api/contentReq'
 import RichTextEditor from '@/components/editor/RichTextEditor'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,13 +16,20 @@ import { ImageUpload } from '@/components/ui/image-upload'
 import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/ui/tag-input'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { contentService } from '@/services/content'
-import { setContentTypes, setError } from '@/store/features/contentSlice'
-import { ApiResponse, ContentTypesResponse } from '@/types/content'
+import { cn } from '@/lib/utils'
+import {
+  setContentTypes,
+  setError,
+  setLoading,
+  setPostTypeId,
+} from '@/store/features/contentSlice'
+import { ContentType } from '@/types/content'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { is } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'react-toastify'
 import slugify from 'slugify'
 import * as z from 'zod'
 
@@ -41,106 +49,157 @@ const postSchema = z.object({
 // Infer the type from the schema
 type CreatePostData = z.infer<typeof postSchema>
 
-export default function PostForm() {
+interface PostFormProps {
+  initialData?: any
+  postTypeId: string
+  isEditing?: boolean
+  onSuccess?: () => void
+}
+
+export default function PostForm({
+  initialData,
+  postTypeId,
+  isEditing = false,
+  onSuccess,
+}: PostFormProps) {
+  const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
-  const { postTypeId } = useAppSelector((state) => state.content)
+  const { postTypeId: reduxPostTypeId } = useAppSelector(
+    (state) => state.content
+  )
   const dispatch = useAppDispatch()
 
-  // Wrap with useCallback
-  useEffect(() => {
-    const fetchContentTypes = async () => {
-      try {
-        const response =
-          (await contentService.getContentTypes()) as ApiResponse<ContentTypesResponse>
+  const contentTypeReq = async () => {
+    dispatch(setLoading(true))
 
-        if (response.error) {
-          dispatch(setError(response.error))
-          return
-        }
+    try {
+      const data = await getContentTypes()
 
-        if (response.data?.contentTypes) {
-          dispatch(setContentTypes(response.data.contentTypes))
+      if (data?.data?.error) {
+        dispatch(setError(data.data.error))
+        toast.error(data.data.error)
+      } else if (data?.data?.contentTypes) {
+        dispatch(setContentTypes(data.data.contentTypes))
+
+        const postType: ContentType | undefined = data.data.contentTypes.find(
+          (type: ContentType) => type.name === 'post'
+        )
+
+        if (postType) {
+          dispatch(setPostTypeId(postType.id))
         }
-      } catch (err) {
-        console.error('Failed to fetch content types:', err)
-        dispatch(setError('Failed to fetch content types'))
       }
+    } catch (error) {
+      let errorMsg = 'An error occurred while fetching content types'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+      dispatch(setError(errorMsg))
+      toast.error(errorMsg)
     }
+  }
 
-    fetchContentTypes()
+  useEffect(() => {
+    contentTypeReq()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch])
 
   const form = useForm<CreatePostData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      title: '',
-      slug: '',
-      author: '',
-      content: '',
-      status: 'draft',
-      featuredImage: '',
-      tags: [],
-      publishedAt: new Date().toISOString(),
-      metaDescription: '',
+      title: initialData?.title || '',
+      slug: initialData?.slug || '',
+      author: initialData?.author || '',
+      content: initialData?.content || '',
+      status: initialData?.status || 'draft',
+      featuredImage: initialData?.featuredImage || '',
+      tags: initialData?.tags || [],
+      publishedAt: initialData?.publishedAt || new Date().toISOString(),
+      metaDescription: initialData?.metaDescription || '',
     },
   })
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const title = e.target.value
-    const slug = slugify(title, { lower: true, strict: true })
-    form.setValue('title', title)
+    const newTitle = e.target.value
+    setTitle(newTitle)
+    const slug = slugify(newTitle, { lower: true, strict: true })
+    form.setValue('title', newTitle)
     form.setValue('slug', slug)
   }
 
-  // Usage in PostForm.tsx
-  // const handleSubmit = async (formData: CreatePostData) => {
-  //   try {
-  //     setIsSubmitting(true)
+  const handleSubmit = async (formData: CreatePostData) => {
+    try {
+      setIsSubmitting(true)
 
-  //     if (!postTypeId) {
-  //       toast.error('Post type not found')
-  //       return
-  //     }
+      if (!postTypeId) {
+        toast.error('Post type not found')
+        return
+      }
 
-  //     // Clean up the data before sending
-  //     const cleanData = {
-  //       ...formData,
-  //       tags: Array.isArray(formData.tags) ? formData.tags : [],
-  //       publishedAt: new Date().toISOString(),
-  //       // Ensure all fields are in correct format
-  //       status: formData.status || 'draft',
-  //       featuredImage: formData.featuredImage || '',
-  //       metaDescription: formData.metaDescription || '',
-  //     }
+      const cleanData = {
+        ...formData,
+        tags: Array.isArray(formData.tags) ? formData.tags : [],
+        publishedAt: new Date().toISOString(),
+        status: formData.status || 'draft',
+        featuredImage: formData.featuredImage || '',
+        metaDescription: formData.metaDescription || '',
+      }
 
-  //     const { error } = await contentService.createContent(
-  //       postTypeId,
-  //       cleanData
-  //     )
+      if (isEditing) {
+        const data = await updateContent(postTypeId, initialData.id, cleanData)
+        // if (error) {
+        //   toast.error(error)
+        //   return
+        // }
+        toast.success('Post updated successfully')
+      } else {
+        const data = await createContent(postTypeId, cleanData)
+        if (data.data.error) {
+          toast.error(data.data.error)
+          return
+        }
+        toast.success('Post created successfully')
+      }
 
-  //     if (error) {
-  //       toast.error(error)
-  //       return
-  //     }
+      onSuccess?.()
+    } catch (error) {
+      toast.error(isEditing ? 'Failed to update post' : 'Failed to create post')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
-  //     toast.success('Post created successfully')
-  //     router.push('/dashboard')
-  //   } catch (error) {
-  //     console.error('Submission error:', error)
-  //     toast.error('Failed to create post')
-  //   } finally {
-  //     setIsSubmitting(false)
-  //   }
-  // }
+  // Add this to check form validity
+  const isFormValid = form.formState.isValid
+  const isDirty = form.formState.isDirty
 
   return (
-    <main className='min-h-screen flex flex-col gap-5 p-4 md:p-6'>
+    <main
+      className={cn(
+        'flex flex-col items-center gap-5 p-5 mx-auto w-full ',
+        isEditing ? 'w-full' : 'lg:w-3/4'
+      )}
+    >
+      <h1
+        className={cn(
+          'text-3xl font-bold flex justify-start items-start w-full',
+          isEditing ? 'w-full' : 'lg:w-3/4 text-left py-10'
+        )}
+      >
+        {title ? title : 'New Post'}
+      </h1>
+
       <Form {...form}>
         <form
-          // onSubmit={form.handleSubmit(handleSubmit)}
-          className='w-full mx-auto flex flex-col gap-5 lg:w-2/3'
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className={cn(
+            'w-full flex flex-col gap-5 overflow-hidden',
+            isEditing ? 'w-full' : 'lg:w-3/4'
+          )}
         >
           <FormField
             control={form.control}
@@ -286,7 +345,15 @@ export default function PostForm() {
             <Button type='button' variant='outline'>
               Cancel
             </Button>
-            <Button type='submit' disabled={isSubmitting}>
+            <Button
+              type='submit'
+              disabled={isSubmitting || !isFormValid || !isDirty}
+              className={`cursor-pointer ${
+                isSubmitting || !isFormValid || !isDirty
+                  ? 'cursor-not-allowed opacity-50'
+                  : ''
+              }`}
+            >
               {isSubmitting ? 'Saving...' : 'Save Post'}
             </Button>
           </div>

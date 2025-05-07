@@ -14,6 +14,7 @@ import {
   IoShieldOutline,
 } from 'react-icons/io5'
 import { MdArticle } from 'react-icons/md'
+import { ThemeToggle } from './theme/ThemeToggle'
 
 const linksItems = [
   { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
@@ -58,11 +59,11 @@ export default function NavMenu() {
 
       <nav
         className={`
-        flex flex-col h-screen bg-gray-800 text-white p-6
-        w-64 flex-shrink-0
+        flex flex-col h-screen bg-primary dark:bg-background text-white p-6
+        lg:w-1/5 flex-shrink-0 dark:border-r
         transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        z-40 fixed lg:relative
+        z-40 fixed top-0 left-0
       `}
       >
         {/* Logo Section */}
@@ -124,6 +125,11 @@ export default function NavMenu() {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className='flex items-center gap-3 py-2'>
+          <span className=''>Mode:</span>
+          <ThemeToggle />
         </div>
 
         {/* User Profile Section */}

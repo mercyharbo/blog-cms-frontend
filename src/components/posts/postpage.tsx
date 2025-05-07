@@ -1,6 +1,14 @@
 'use client'
 
-import { getContent, getContentTypes } from '@/api/contentReq'
+import { deleteContent, getContent, getContentTypes } from '@/api/contentReq'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import {
   setContentTypes,
@@ -12,7 +20,8 @@ import {
 import { ContentType, Post } from '@/types/content'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
@@ -37,8 +46,20 @@ interface ContentBlock {
 
 export default function PostListPage() {
   const dispatch = useAppDispatch()
-  const { posts, loading } = useAppSelector((state) => state.content)
+  const router = useRouter()
+  const { posts, loading, postTypeId } = useAppSelector(
+    (state) => state.content
+  )
+  const [postToDelete, setPostToDelete] = useState<{
+    id: string
+    title: string
+    postTypeId: string
+  } | null>(null)
 
+  /**
+   * The function `contentTypeReq` fetches content types, handles errors, and dispatches actions based on
+   * the retrieved data.
+   */
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
 
@@ -72,6 +93,13 @@ export default function PostListPage() {
     }
   }
 
+  /**
+   * The function `getPostContents` fetches post contents based on a content type ID and handles errors
+   * accordingly.
+   * @param {string} contentTypeId - The `contentTypeId` parameter in the `getPostContents` function is a
+   * string that represents the type of content to be fetched. It is used to retrieve content data based
+   * on the specified content type.
+   */
   const getPostContents = async (contentTypeId: string) => {
     try {
       const data = await getContent(contentTypeId)
@@ -95,6 +123,78 @@ export default function PostListPage() {
     }
   }
 
+  const handleDeleteModal = (post: Post) => {
+    setPostToDelete({
+      id: post.id,
+      title: post.data.title,
+      postTypeId: postTypeId ?? '',
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (postToDelete) {
+      try {
+        await deleteContentFunc(postToDelete.postTypeId, postToDelete.id)
+        setPostToDelete(null)
+
+        // Fetch posts again after successful deletion
+        setTimeout(() => {
+          window.location.reload()
+        }, 10000)
+      } catch (error) {
+        console.error('Error deleting post:', error)
+      }
+    }
+  }
+
+  /**
+   * The function `deleteContentFunc` is an asynchronous function that handles the deletion of content
+   * based on the content type and post ID, displaying success or error messages and updating the post
+   * list accordingly.
+   * @param {string} contentTypeId - The `contentTypeId` parameter in the `deleteContentFunc` function
+   * is a string that represents the type of content being deleted. It is used to identify the specific
+   * type of content that is being deleted, such as a post, comment, or any other type of content in the
+   * system.
+   * @param {string} postId - The `postId` parameter in the `deleteContentFunc` function is the unique
+   * identifier of the post that you want to delete. It is used to specify which post should be deleted
+   * when calling the `deleteContent` function.
+   */
+  const deleteContentFunc = async (contentTypeId: string, postId: string) => {
+    try {
+      dispatch(setLoading(true))
+      const data = await deleteContent(contentTypeId, postId)
+
+      if (data.data.error) {
+        dispatch(setError(data.data.error))
+        toast.error(data.data.error)
+      } else if (data) {
+        toast.success(data.data.message)
+      }
+    } catch (error) {
+      let errorMsg = 'An error occurred while deleting content'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+      dispatch(setError(errorMsg))
+      toast.error(errorMsg)
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }
+
+  /**
+   * The function `getContentPreview` takes a post object as input and returns a preview of its content
+   * by stripping HTML tags and limiting the length to 100 characters.
+   * @param {Post} post - The `post` parameter in the `getContentPreview` function is expected to be an
+   * object of type `Post`. It is used to extract the content data from the post in order to generate a
+   * preview. If the post object or its content data is missing or empty, the function will return 'No
+   * @returns The `getContentPreview` function returns a preview of the content from a post. If the post
+   * data does not contain any content, it returns 'No content available'. If there is content available,
+   * it strips HTML tags and gets the plain text. If the plain text is longer than 100 characters, it
+   * returns the first 100 characters followed by '...'. Otherwise, it returns the entire plain text
+   */
   const getContentPreview = (post: Post): string => {
     if (!post?.data?.content) return 'No content available'
 
@@ -138,7 +238,7 @@ export default function PostListPage() {
         </Link>
       </header>
 
-      <div className='overflow-x-auto scrollbar-hide w-full border rounded-md'>
+      <div className='hide-scrollbar overflow-x-auto w-full border rounded-md'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -181,18 +281,15 @@ export default function PostListPage() {
                   <TableCell className='text-right'>
                     <div className='flex items-center justify-end gap-2'>
                       <Link href={`/dashboard/${post.id}`}>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='text-blue-600 hover:text-blue-700'
-                        >
+                        <Button type='button' variant='outline' size='sm'>
                           <FiEdit2 className='h-4 w-4' />
                         </Button>
                       </Link>
                       <Button
-                        variant='ghost'
+                        type='button'
+                        variant='destructive'
                         size='sm'
-                        className='text-red-600 hover:text-red-700'
+                        onClick={() => handleDeleteModal(post)}
                       >
                         <FiTrash2 className='h-4 w-4' />
                       </Button>
@@ -204,6 +301,34 @@ export default function PostListPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Post</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{postToDelete?.title}"? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className='flex items-center gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setPostToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type='button'
+              variant='destructive'
+              onClick={() => handleConfirmDelete()}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }

@@ -10,17 +10,16 @@ import {
   setLoading,
 } from '@/store/features/contentSlice'
 import { ContentDetailsResponse } from '@/types/content'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useEffect } from 'react'
+import Image from '@tiptap/extension-image'
+import { EditorContent, useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { useEffect, useState } from 'react'
 import { FiCalendar, FiEdit2, FiUser } from 'react-icons/fi'
-import ReactMarkdown from 'react-markdown'
 import { toast } from 'react-toastify'
-import rehypeRaw from 'rehype-raw'
-import rehypeSanitize from 'rehype-sanitize'
-import remarkGfm from 'remark-gfm'
 import BreadcrumbNav from '../ui/BreadcrumbNav'
 import PageLoadingSpinner from '../ui/PageLoadingSpinner'
+import { SlideOutModal } from '../ui/SlideOutModal'
+import PostForm from './PostForm'
 
 interface SinglePostPageProps {
   postId: string
@@ -35,34 +34,137 @@ export default function SinglePostPage({
   const { currentPost, loading } = useAppSelector((state) => state.content)
 
   const getContentsDetails = async () => {
-    dispatch(setLoading(true))
-    const { data, error } = (await contentService.getContentDetails(
-      postTypeId,
-      postId
-    )) as {
-      data: ContentDetailsResponse | null
-      error: string | null
-    }
+    try {
+      dispatch(setLoading(true))
+      const { data, error } = (await contentService.getContentDetails(
+        postTypeId,
+        postId
+      )) as {
+        data: ContentDetailsResponse | null
+        error: string | null
+      }
 
-    if (error) {
-      dispatch(setError(error))
-      toast.error(error)
-    } else if (data) {
-      dispatch(setCurrentPost(data.content))
+      if (error) {
+        dispatch(setError(error))
+        toast.error(error)
+        return
+      }
+
+      if (data) {
+        dispatch(setCurrentPost(data.content))
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch post details'
+      dispatch(setError(errorMessage))
+      toast.error(errorMessage)
+    } finally {
+      dispatch(setLoading(false))
     }
-    dispatch(setLoading(false))
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Move editor initialization after data fetching
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+        bold: {},
+        italic: {},
+        blockquote: {},
+        strike: {},
+        code: {},
+        listItem: {},
+        bulletList: {},
+        orderedList: {},
+      }),
+      Image.configure({
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'rounded-lg w-full md:w-2/3 my-6',
+        },
+      }),
+    ],
+    editable: false,
+    content: currentPost?.data?.content || '', // Initialize with content if available
+  })
+
+  // Fetch post details on mount
   useEffect(() => {
     getContentsDetails()
-  }, [dispatch])
+  }, [postId, postTypeId]) // Add proper dependencies
 
-  if (loading || !currentPost) {
+  // Update editor content when post changes
+  useEffect(() => {
+    if (currentPost?.data?.content && editor) {
+      const processContent = (content: string) => {
+        return (
+          content
+            // Handle headings
+            .replace(/### (.*$)/gm, '<h3>$1</h3>')
+            .replace(/## (.*$)/gm, '<h2>$1</h2>')
+            .replace(/# (.*$)/gm, '<h1>$1</h1>')
+            // Handle bold
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // Handle italic
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            // Handle blockquotes
+            .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+            // Handle code blocks
+            .replace(
+              /```(\w+)?\n([\s\S]*?)\n```/g,
+              '<pre><code>$2</code></pre>'
+            )
+            // Handle inline code
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            // Handle images
+            .replace(
+              /!\[.*?\]\((data:image\/[^;]+;base64,[^)]+)\)/g,
+              '<img src="$1" />'
+            )
+            // Handle lists
+            .replace(/^\s*[-*+] (.*)$/gm, '<ul><li>$1</li></ul>')
+            .replace(/^\s*\d+\. (.*)$/gm, '<ol><li>$1</li></ol>')
+            // Handle paragraphs
+            .split('\n\n')
+            .map((paragraph) => {
+              if (!paragraph.startsWith('<')) {
+                return `<p>${paragraph}</p>`
+              }
+              return paragraph
+            })
+            .join('')
+        )
+      }
+
+      const processedContent = processContent(currentPost.data.content)
+
+      editor.commands.setContent(processedContent)
+    }
+  }, [currentPost?.data?.content, editor])
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  // Add handler for edit button
+  const handleEditClick = () => {
+    setIsEditModalOpen(true)
+  }
+
+  // Loading state
+  if (loading && !currentPost) {
+    // Only show loading on initial load
     return <PageLoadingSpinner />
   }
 
-  console.log('currentPost', currentPost)
+  // Error state
+  if (!currentPost?.data) {
+    return (
+      <div className='flex items-center justify-center h-screen'>
+        <p className='text-muted-foreground'>Post not found</p>
+      </div>
+    )
+  }
 
   return (
     <main className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -73,12 +175,15 @@ export default function SinglePostPage({
           <h1 className='text-4xl font-bold tracking-tight text-foreground'>
             {currentPost?.data?.title}
           </h1>
-          <Link href={`/dashboard/posts/${postId}/edit`} passHref>
-            <Button variant='default' size='sm' className='gap-2'>
-              <FiEdit2 className='h-4 w-4' />
-              Edit Post
-            </Button>
-          </Link>
+          <Button
+            variant='default'
+            size='sm'
+            className='gap-2'
+            onClick={handleEditClick}
+          >
+            <FiEdit2 className='h-4 w-4' />
+            Edit Post
+          </Button>
         </div>
 
         <div className='flex flex-wrap items-center gap-4 text-sm text-muted-foreground'>
@@ -119,62 +224,36 @@ export default function SinglePostPage({
         </div>
       </div>
 
-      <article className='prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-blockquote:border-primary prose-strong:text-primary'>
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize]}
-          components={{
-            h1: ({ children }) => (
-              <h1 className='text-4xl font-bold my-6 animate-in fade-in-50'>
-                {children}
-              </h1>
-            ),
-            h2: ({ children }) => (
-              <h2 className='text-3xl font-bold my-5 animate-in fade-in-50'>
-                {children}
-              </h2>
-            ),
-            h3: ({ children }) => (
-              <h3 className='text-2xl font-bold my-4 animate-in fade-in-50'>
-                {children}
-              </h3>
-            ),
-            p: ({ children }) => (
-              <p className='my-4 leading-relaxed animate-in fade-in-50'>
-                {children}
-              </p>
-            ),
-            blockquote: ({ children }) => (
-              <blockquote className='border-l-4 pl-4 my-6 italic bg-muted/50 py-2 rounded-sm animate-in slide-in-from-left'>
-                {children}
-              </blockquote>
-            ),
-            strong: ({ children }) => (
-              <strong className='font-bold text-primary'>{children}</strong>
-            ),
-            img: ({ src, alt }) => (
-              <div className='relative w-full h-[400px] my-6 rounded-lg overflow-hidden animate-in zoom-in-50'>
-                <Image
-                  src={String(src || '/placeholder-image.jpg')}
-                  alt={alt || 'Blog image'}
-                  fill
-                  className='object-cover rounded-lg hover:scale-105 transition-transform duration-300'
-                  unoptimized={
-                    typeof src === 'string' && src.startsWith('data:')
-                  }
-                />
-              </div>
-            ),
-            code: ({ children }) => (
-              <code className='block bg-muted p-4 rounded-lg overflow-x-auto'>
-                {children}
-              </code>
-            ),
-          }}
-        >
-          {currentPost?.data?.content || ''}
-        </ReactMarkdown>
+      <article
+        className='prose prose-lg max-w-none 
+        prose-headings:text-foreground 
+        prose-p:text-muted-foreground 
+        prose-blockquote:border-primary 
+        prose-strong:text-primary
+        prose-img:rounded-lg
+        prose-pre:bg-muted
+        prose-pre:p-4
+        prose-pre:rounded-lg
+      '
+      >
+        <EditorContent editor={editor} className='min-h-[200px]' />
       </article>
+
+      <SlideOutModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title={`Edit: ${currentPost?.data?.title}`}
+      >
+        <PostForm
+          initialData={currentPost?.data}
+          postTypeId={postTypeId}
+          isEditing={true}
+          onSuccess={() => {
+            setIsEditModalOpen(false)
+            getContentsDetails() // Refresh the post data
+          }}
+        />
+      </SlideOutModal>
     </main>
   )
 }

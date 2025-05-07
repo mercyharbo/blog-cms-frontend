@@ -55,7 +55,7 @@ export function TagInput({ value, onChange, placeholder }: TagInputProps) {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className='border-0 p-0 shadow-none focus-visible:ring-0'
+        className='border-0 py-0 px-2 shadow-none focus-visible:ring-0'
       />
     </div>
   )

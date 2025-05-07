@@ -5,9 +5,11 @@ import { AuthProvider } from '@/context/AuthContext'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
-    <main className='flex h-screen w-full overflow-hidden bg-gray-50'>
+    <main className='flex h-screen w-full overflow-hidden dark:bg-background'>
       <NavMenu />
-      <div className='flex-1 overflow-auto p-6'>{children}</div>
+      <div className='p-5 absolute w-full lg:w-[80%] lg:top-0 lg:right-0'>
+        {children}
+      </div>
     </main>
   )
 }

@@ -50,95 +50,86 @@
 :root {
   --radius: 0.625rem;
   /* Base colors */
-  --background: hsla(0, 0%, 92%, 1); /* antiflash-white for main background */
-  --foreground: hsla(209, 100%, 30%, 1); /* polynesian-blue for text */
+  --background: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --foreground: #27187e;
 
   /* Card and Popover */
-  --card: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --card-foreground: hsla(209, 100%, 30%, 1); /* polynesian-blue */
-  --popover: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --popover-foreground: hsla(209, 100%, 30%, 1); /* polynesian-blue */
+  --card: hsla(0, 0%, 92%, 1);
+  --card-foreground: #27187e;
+  --popover: hsla(0, 0%, 92%, 1);
+  --popover-foreground: #27187e;
 
   /* Primary - main brand color */
-  --primary: hsla(24, 100%, 50%, 1); /* pumpkin for primary actions */
-  --primary-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --primary: #27187e;
+  --primary-foreground: hsla(0, 0%, 92%, 1);
 
   /* Secondary */
-  --secondary: hsla(211, 48%, 44%, 1); /* bice-blue for secondary elements */
-  --secondary-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --secondary: #758bfd;
+  --secondary-foreground: hsla(0, 0%, 92%, 1);
 
   /* Muted and Accent */
-  --muted: hsla(0, 0%, 75%, 1); /* silver for muted elements */
-  --muted-foreground: hsla(209, 100%, 30%, 1); /* polynesian-blue */
-  --accent: hsla(211, 48%, 44%, 1); /* bice-blue */
-  --accent-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --muted: rgba(39, 24, 126, 0.1);
+  --muted-foreground: #27187e;
+  --accent: #758bfd;
+  --accent-foreground: hsla(0, 0%, 92%, 1);
 
   /* Utility colors */
-  --destructive: hsla(24, 100%, 50%, 1); /* pumpkin for destructive actions */
-  --border: hsla(0, 0%, 75%, 1); /* silver */
-  --input: hsla(0, 0%, 75%, 1); /* silver */
-  --ring: hsla(211, 48%, 44%, 1); /* bice-blue */
+  --destructive: #ff4444;
+  --border: #758bfd;
+  --input: #758bfd;
+  --ring: #27187e;
 
   /* Sidebar specific */
-  --sidebar: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --sidebar-foreground: hsla(209, 100%, 30%, 1); /* polynesian-blue */
-  --sidebar-primary: hsla(24, 100%, 50%, 1); /* pumpkin */
-  --sidebar-primary-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --sidebar-accent: hsla(211, 48%, 44%, 1); /* bice-blue */
-  --sidebar-accent-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --sidebar-border: hsla(0, 0%, 75%, 1); /* silver */
-  --sidebar-ring: hsla(211, 48%, 44%, 1); /* bice-blue */
+  --sidebar: #27187e;
+  --sidebar-foreground: hsla(0, 0%, 92%, 1);
+  --sidebar-primary: #27187e;
+  --sidebar-primary-foreground: hsla(0, 0%, 92%, 1);
+  --sidebar-accent: #758bfd;
+  --sidebar-accent-foreground: hsla(0, 0%, 92%, 1);
+  --sidebar-border: rgba(117, 139, 253, 0.2);
+  --sidebar-ring: #758bfd;
 }
 
 .dark {
   /* Base colors */
-  --background: hsla(209, 100%, 30%, 1); /* polynesian-blue */
-  --foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --background: #000505;
+  --foreground: #e2e8f0;
 
   /* Card and Popover */
-  --card: hsla(211, 48%, 44%, 1); /* bice-blue */
-  --card-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --popover: hsla(211, 48%, 44%, 1); /* bice-blue */
-  --popover-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --card: #001a1a;
+  --card-foreground: #e2e8f0;
+  --popover: #001a1a;
+  --popover-foreground: #e2e8f0;
 
   /* Primary - main brand color */
-  --primary: hsla(24, 100%, 50%, 1); /* pumpkin stays consistent */
-  --primary-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --primary: #64ffda;
+  --primary-foreground: #001a1a;
 
   /* Secondary */
-  --secondary: hsla(0, 0%, 75%, 1); /* silver */
-  --secondary-foreground: hsla(209, 100%, 30%, 1); /* polynesian-blue */
+  --secondary: #88ccff;
+  --secondary-foreground: #001a1a;
 
   /* Muted and Accent */
-  --muted: hsla(211, 48%, 44%, 0.8); /* translucent bice-blue */
-  --muted-foreground: hsla(0, 0%, 92%, 0.8); /* translucent antiflash-white */
-  --accent: hsla(24, 100%, 50%, 1); /* pumpkin */
-  --accent-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
+  --muted: rgba(100, 255, 218, 0.1);
+  --muted-foreground: #a0aec0;
+  --accent: #64ffda;
+  --accent-foreground: #001a1a;
 
   /* Utility colors */
-  --destructive: hsla(24, 100%, 50%, 1); /* pumpkin */
-  --border: hsla(0, 0%, 92%, 0.1); /* translucent antiflash-white */
-  --input: hsla(0, 0%, 92%, 0.1); /* translucent antiflash-white */
-  --ring: hsla(24, 100%, 50%, 1); /* pumpkin */
+  --destructive: #ff4444;
+  --border: rgba(226, 232, 240, 0.1);
+  --input: rgba(226, 232, 240, 0.1);
+  --ring: #64ffda;
 
   /* Sidebar specific */
-  --sidebar: hsla(211, 48%, 44%, 1); /* bice-blue */
-  --sidebar-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --sidebar-primary: hsla(24, 100%, 50%, 1); /* pumpkin */
-  --sidebar-primary-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --sidebar-accent: hsla(209, 100%, 30%, 1); /* polynesian-blue */
-  --sidebar-accent-foreground: hsla(0, 0%, 92%, 1); /* antiflash-white */
-  --sidebar-border: hsla(0, 0%, 92%, 0.1); /* translucent antiflash-white */
-  --sidebar-ring: hsla(24, 100%, 50%, 1); /* pumpkin */
-}
-
-/* Option 3: Add this to your global CSS file (styles/globals.css) */
-.hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
+  --sidebar: #001a1a;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #64ffda;
+  --sidebar-primary-foreground: #001a1a;
+  --sidebar-accent: #88ccff;
+  --sidebar-accent-foreground: #001a1a;
+  --sidebar-border: rgba(226, 232, 240, 0.1);
+  --sidebar-ring: #64ffda;
 }
 
 @layer base {
@@ -161,7 +152,87 @@
   }
 
   .ProseMirror {
-    @apply min-h-[200px] outline-none;
+    @apply min-h-[200px] outline-none space-y-4;
+
+    h1,
+    h2,
+    h3 {
+      @apply font-bold mt-8 mb-4;
+    }
+
+    h1 {
+      @apply text-3xl;
+    }
+
+    h2 {
+      @apply text-2xl;
+    }
+
+    h3 {
+      @apply text-xl;
+    }
+
+    p {
+      @apply text-base leading-relaxed my-4;
+    }
+
+    strong,
+    b {
+      @apply font-bold text-primary;
+    }
+
+    em,
+    i {
+      @apply italic;
+    }
+
+    blockquote {
+      @apply border-l-4 border-primary pl-4 py-2 my-4 italic bg-muted/50 rounded-sm;
+    }
+
+    code {
+      @apply bg-muted p-2 rounded-lg text-sm font-mono;
+    }
+
+    pre {
+      @apply bg-muted p-4 rounded-lg overflow-x-auto my-4;
+
+      code {
+        @apply bg-transparent p-0;
+      }
+    }
+
+    ul {
+      @apply list-disc pl-6 my-4 space-y-2;
+    }
+
+    ol {
+      @apply list-decimal pl-6 my-4 space-y-2;
+    }
+
+    li {
+      @apply ml-4;
+    }
+
+    img {
+      @apply rounded-lg max-w-full h-auto my-6;
+      max-height: 600px;
+      width: 100%;
+      object-fit: contain;
+    }
+
+    /* Handle spacing between elements */
+    * + h1,
+    * + h2,
+    * + h3 {
+      @apply mt-8;
+    }
+
+    h1 + p,
+    h2 + p,
+    h3 + p {
+      @apply mt-4;
+    }
   }
 
   .ProseMirror p {
@@ -183,4 +254,17 @@
   .ProseMirror img {
     @apply max-w-full h-auto my-4;
   }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0; /* Remove scrollbar space */
+  background: transparent; /* Optional: just make scrollbar invisible */
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
