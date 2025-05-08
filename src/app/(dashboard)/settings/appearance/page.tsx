@@ -16,7 +16,7 @@ import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 
 export default function AppearancePage() {
-  const { theme, setTheme, resolvedTheme, systemTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [animationsEnabled, setAnimationsEnabled] = useState(true)
   const [reducedMotion, setReducedMotion] = useState(false)
