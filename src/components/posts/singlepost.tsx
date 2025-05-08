@@ -1,19 +1,19 @@
 'use client'
 
+import { getContentDetails } from '@/api/contentReq'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { contentService } from '@/services/content'
 import {
   setCurrentPost,
   setError,
   setLoading,
 } from '@/store/features/contentSlice'
-import { ContentDetailsResponse } from '@/types/content'
-import Image from '@tiptap/extension-image'
+import TiptapImage from '@tiptap/extension-image' // Rename the TipTap import
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useState } from 'react'
+import Image from 'next/image' // Add Next.js Image import
+import { useCallback, useEffect, useState } from 'react'
 import { FiCalendar, FiEdit2, FiUser } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import BreadcrumbNav from '../ui/BreadcrumbNav'
@@ -33,25 +33,20 @@ export default function SinglePostPage({
   const dispatch = useAppDispatch()
   const { currentPost, loading } = useAppSelector((state) => state.content)
 
-  const getContentsDetails = async () => {
+  // Add useCallback to memoize getContentsDetails
+  const getContentsDetails = useCallback(async () => {
     try {
       dispatch(setLoading(true))
-      const { data, error } = (await contentService.getContentDetails(
-        postTypeId,
-        postId
-      )) as {
-        data: ContentDetailsResponse | null
-        error: string | null
-      }
+      const data = await getContentDetails(postTypeId, postId)
 
-      if (error) {
-        dispatch(setError(error))
-        toast.error(error)
+      if (data.data.error) {
+        dispatch(setError(data.data.error))
+        toast.error(data.data.error)
         return
       }
 
       if (data) {
-        dispatch(setCurrentPost(data.content))
+        dispatch(setCurrentPost(data.data.content))
       }
     } catch (error) {
       const errorMessage =
@@ -61,7 +56,7 @@ export default function SinglePostPage({
     } finally {
       dispatch(setLoading(false))
     }
-  }
+  }, [dispatch, postId, postTypeId]) // Dependencies for useCallback
 
   // Move editor initialization after data fetching
   const editor = useEditor({
@@ -79,7 +74,7 @@ export default function SinglePostPage({
         bulletList: {},
         orderedList: {},
       }),
-      Image.configure({
+      TiptapImage.configure({
         allowBase64: true,
         HTMLAttributes: {
           class: 'rounded-lg w-full md:w-2/3 my-6',
@@ -93,7 +88,7 @@ export default function SinglePostPage({
   // Fetch post details on mount
   useEffect(() => {
     getContentsDetails()
-  }, [postId, postTypeId]) // Add proper dependencies
+  }, [postId, postTypeId, getContentsDetails]) // Added getContentsDetails to dependencies
 
   // Update editor content when post changes
   useEffect(() => {
@@ -170,7 +165,7 @@ export default function SinglePostPage({
     <main className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
       <BreadcrumbNav />
 
-      <div className='py-6 space-y-4'>
+      <header className='py-6 space-y-4'>
         <div className='flex items-center justify-between gap-4'>
           <h1 className='text-4xl font-bold tracking-tight text-foreground'>
             {currentPost?.data?.title}
@@ -194,14 +189,11 @@ export default function SinglePostPage({
           <div className='flex items-center gap-2'>
             <FiCalendar className='h-4 w-4' />
             <time>
-              {new Date(currentPost?.data?.publishedAt).toLocaleDateString(
-                'en-US',
-                {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                }
-              )}
+              {new Date(currentPost?.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
             </time>
           </div>
           <Badge
@@ -222,6 +214,19 @@ export default function SinglePostPage({
             ))}
           </div>
         </div>
+      </header>
+
+      <div className='post-cover-image'>
+        {currentPost?.data?.cover_image && (
+          <Image
+            src={currentPost.data.cover_image.url}
+            alt={currentPost.data.cover_image.alt}
+            width={1200}
+            height={630}
+            className='rounded-lg w-full'
+            priority
+          />
+        )}
       </div>
 
       <article
@@ -245,8 +250,8 @@ export default function SinglePostPage({
         title={`Edit: ${currentPost?.data?.title}`}
       >
         <PostForm
-          initialData={currentPost?.data}
-          postTypeId={postTypeId}
+          initialData={currentPost} // Changed from currentPost?.data to currentPost
+          contentTypeId={postTypeId}
           isEditing={true}
           onSuccess={() => {
             setIsEditModalOpen(false)

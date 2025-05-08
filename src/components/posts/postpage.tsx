@@ -20,7 +20,6 @@ import {
 import { ContentType, Post } from '@/types/content'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'
@@ -46,7 +45,6 @@ interface ContentBlock {
 
 export default function PostListPage() {
   const dispatch = useAppDispatch()
-  const router = useRouter()
   const { posts, loading, postTypeId } = useAppSelector(
     (state) => state.content
   )
@@ -303,12 +301,12 @@ export default function PostListPage() {
       </div>
 
       <Dialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
-        <DialogContent>
+        <DialogContent className='sm:max-w-[425px]'>
           <DialogHeader>
             <DialogTitle>Delete Post</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{postToDelete?.title}"? This
-              action cannot be undone.
+              Are you sure you want to delete &ldquo;{postToDelete?.title}
+              &rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className='flex items-center gap-2'>

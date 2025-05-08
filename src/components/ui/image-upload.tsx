@@ -8,8 +8,8 @@ import { toast } from 'react-toastify'
 import { Button } from './button'
 
 interface ImageUploadProps {
-  value: string
-  onChange: (value: string) => void
+  value?: { url: string; alt: string } | null
+  onChange: (value: { url: string; alt: string } | null) => void
   onRemove: () => void
 }
 
@@ -37,7 +37,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
         }
 
         const base64String = await convertToBase64(file)
-        onChange(base64String)
+        onChange({ url: base64String, alt: '' })
         toast.success('Image added successfully')
       } catch (err) {
         console.error('Image processing error:', err)
@@ -62,12 +62,12 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
 
   return (
     <div>
-      {value ? (
+      {value?.url ? (
         <div className='relative rounded-lg overflow-hidden border border-border'>
           <div className='aspect-video relative'>
             <Image
-              src={value}
-              alt='Preview'
+              src={value.url}
+              alt={value.alt || ''}
               fill
               className='object-cover'
               sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'

@@ -2,8 +2,16 @@
 interface BaseContent {
   id: string
   type_id: string
+  user_id: string
   created_at: string
   updated_at: string
+  last_modified: string
+}
+
+// Image Interface
+export interface Image {
+  alt: string
+  url: string
 }
 
 // Post Data Interface
@@ -13,14 +21,17 @@ export interface PostData {
   author: string
   content: string
   status: 'draft' | 'published'
-  featuredImage: string
+  cover_image: Image
+  social_image: Image
   tags: string[]
-  publishedAt: string
-  metaDescription: string
+  meta_title: string
+  meta_keywords: string[]
+  reading_time: number
 }
 
 // Complete Post Type
 export interface Post extends BaseContent {
+  content_type_id: string
   data: PostData
 }
 
@@ -44,6 +55,11 @@ export interface ContentTypeField {
     maxLength?: number
     referenceType?: string
     hotspot?: boolean
+    imageOptions?: {
+      alt: boolean
+      caption: boolean
+      metadata?: boolean // Add if needed
+    }
   }
 }
 
@@ -81,4 +97,12 @@ export interface ContentStore {
   fetchContentTypes: () => Promise<void>
   setError: (error: string | null) => void
   reset: () => void
+}
+
+export interface ContentState {
+  currentPost: Post | null
+  posts: Post[]
+  loading: boolean
+  error: string | null
+  postTypeId: string | null
 }

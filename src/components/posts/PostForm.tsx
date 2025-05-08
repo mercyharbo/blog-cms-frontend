@@ -25,7 +25,6 @@ import {
 } from '@/store/features/contentSlice'
 import { ContentType } from '@/types/content'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { is } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -40,31 +39,50 @@ const postSchema = z.object({
   author: z.string().min(1, 'Author is required'),
   content: z.string().min(1, 'Content is required'),
   status: z.enum(['draft', 'published']),
-  featuredImage: z.string().optional(), // Simplified validation for now
+  cover_image: z.object({
+    alt: z.string(),
+    url: z.string().url(),
+  }),
   tags: z.array(z.string()),
-  publishedAt: z.string(),
-  metaDescription: z.string().min(1, 'Meta description is required'),
+  meta_title: z.string(),
+  meta_keywords: z.array(z.string()),
+  reading_time: z.number(),
 })
 
 // Infer the type from the schema
 type CreatePostData = z.infer<typeof postSchema>
 
 interface PostFormProps {
-  initialData?: any
-  postTypeId: string
+  initialData?: {
+    id: string
+    content_type_id: string
+    data: {
+      title: string
+      slug: string
+      author: string
+      content: string
+      status: 'draft' | 'published'
+      cover_image?: { alt: string; url: string } // Changed from featuredImage to cover_image
+      tags: string[]
+      meta_title: string // Added meta_title
+      meta_keywords: string[] // Added meta_keywords
+      reading_time: number // Added reading_time
+    }
+  }
+  contentTypeId?: string // Changed from postTypeId to contentTypeId
   isEditing?: boolean
   onSuccess?: () => void
 }
 
 export default function PostForm({
   initialData,
-  postTypeId,
+  contentTypeId, // Changed prop name
   isEditing = false,
   onSuccess,
 }: PostFormProps) {
+  const router = useRouter()
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
 
   const { postTypeId: reduxPostTypeId } = useAppSelector(
     (state) => state.content
@@ -111,15 +129,16 @@ export default function PostForm({
   const form = useForm<CreatePostData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      title: initialData?.title || '',
-      slug: initialData?.slug || '',
-      author: initialData?.author || '',
-      content: initialData?.content || '',
-      status: initialData?.status || 'draft',
-      featuredImage: initialData?.featuredImage || '',
-      tags: initialData?.tags || [],
-      publishedAt: initialData?.publishedAt || new Date().toISOString(),
-      metaDescription: initialData?.metaDescription || '',
+      title: initialData?.data?.title || '',
+      slug: initialData?.data?.slug || '',
+      author: initialData?.data?.author || '',
+      content: initialData?.data?.content || '',
+      status: initialData?.data?.status || 'draft',
+      cover_image: initialData?.data?.cover_image || { alt: '', url: '' },
+      tags: initialData?.data?.tags || [],
+      meta_title: initialData?.data?.meta_title || '',
+      meta_keywords: initialData?.data?.meta_keywords || [],
+      reading_time: initialData?.data?.reading_time || 0,
     },
   })
 
@@ -135,38 +154,53 @@ export default function PostForm({
     try {
       setIsSubmitting(true)
 
-      if (!postTypeId) {
+      const activePostTypeId = isEditing ? contentTypeId : reduxPostTypeId
+
+      if (!activePostTypeId) {
         toast.error('Post type not found')
         return
       }
 
-      const cleanData = {
+      const payload = {
         ...formData,
         tags: Array.isArray(formData.tags) ? formData.tags : [],
-        publishedAt: new Date().toISOString(),
         status: formData.status || 'draft',
-        featuredImage: formData.featuredImage || '',
-        metaDescription: formData.metaDescription || '',
       }
 
       if (isEditing) {
-        const data = await updateContent(postTypeId, initialData.id, cleanData)
-        // if (error) {
-        //   toast.error(error)
-        //   return
-        // }
+        if (!initialData) {
+          toast.error('Post data not found')
+          return
+        }
+
+        const data = await updateContent(
+          activePostTypeId,
+          initialData.id,
+          payload
+        )
+        if (data.data.error) {
+          toast.error(data.data.error)
+          return
+        }
         toast.success('Post updated successfully')
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 5000)
       } else {
-        const data = await createContent(postTypeId, cleanData)
+        const data = await createContent(activePostTypeId, payload)
         if (data.data.error) {
           toast.error(data.data.error)
           return
         }
         toast.success('Post created successfully')
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 10000)
       }
 
       onSuccess?.()
-    } catch (error) {
+    } catch (err) {
+      console.error('Form submission error:', err)
       toast.error(isEditing ? 'Failed to update post' : 'Failed to create post')
     } finally {
       setIsSubmitting(false)
@@ -282,21 +316,13 @@ export default function PostForm({
 
           <FormField
             control={form.control}
-            name='metaDescription'
+            name='meta_title'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Meta Description</FormLabel>
+                <FormLabel>Meta Title</FormLabel>
                 <FormControl>
-                  <textarea
-                    {...field}
-                    className='w-full p-2 border rounded-md'
-                    rows={3}
-                  />
+                  <Input {...field} />
                 </FormControl>
-                <FormDescription>
-                  Brief description for SEO purposes (recommended: 150-160
-                  characters)
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -304,19 +330,57 @@ export default function PostForm({
 
           <FormField
             control={form.control}
-            name='featuredImage'
+            name='meta_keywords'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Meta Keywords</FormLabel>
+                <FormControl>
+                  <TagInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder='Add meta keywords...'
+                  />
+                </FormControl>
+                <FormDescription>Press enter to add keywords</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='reading_time'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reading Time (minutes)</FormLabel>
+                <FormControl>
+                  <Input
+                    type='number'
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value || 0}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='cover_image'
             render={({ field: { onChange, value } }) => (
               <FormItem>
-                <FormLabel>Featured Image</FormLabel>
+                <FormLabel>Cover Image</FormLabel>
                 <FormControl>
                   <ImageUpload
-                    value={value || ''} // Ensure value is never undefined
-                    onChange={onChange} // Pass through the form's onChange
-                    onRemove={() => onChange('')} // Clear the value on remove
+                    value={value || null}
+                    onChange={(imageValue) => onChange(imageValue)}
+                    onRemove={() => onChange(null)}
                   />
                 </FormControl>
                 <FormDescription>
-                  Upload an image (max 5MB). Supported formats: PNG, JPG, JPEG,
+                  Upload an image (max 10MB). Supported formats: PNG, JPG, JPEG,
                   GIF, WEBP
                 </FormDescription>
                 <FormMessage />
@@ -347,7 +411,7 @@ export default function PostForm({
             </Button>
             <Button
               type='submit'
-              disabled={isSubmitting || !isFormValid || !isDirty}
+              // disabled={isSubmitting || !isFormValid || !isDirty}
               className={`cursor-pointer ${
                 isSubmitting || !isFormValid || !isDirty
                   ? 'cursor-not-allowed opacity-50'

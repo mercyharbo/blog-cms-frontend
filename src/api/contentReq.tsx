@@ -75,7 +75,26 @@ export async function getContentDetails(contentTypeId: string, postId: string) {
   return { data }
 }
 
-export async function createContent(contentTypeId: string, postData: any) {
+interface ImageType {
+  url: string
+  alt: string
+}
+
+export async function createContent(
+  contentTypeId: string,
+  postData: {
+    title: string
+    slug: string
+    author: string
+    content: string
+    status: 'draft' | 'published'
+    cover_image: ImageType
+    tags: string[]
+    meta_title: string
+    meta_keywords: string[]
+    reading_time: number
+  }
+) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
 
@@ -103,14 +122,25 @@ export async function createContent(contentTypeId: string, postData: any) {
 
 export async function updateContent(
   contentTypeId: string,
-  postId: string,
-  postData: any
+  slug: string,
+  postData: {
+    title: string
+    slug: string
+    author: string
+    content: string
+    status: 'draft' | 'published'
+    cover_image: ImageType
+    tags: string[]
+    meta_title: string
+    meta_keywords: string[]
+    reading_time: number
+  }
 ) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}/${postId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}/${slug}`,
     {
       method: 'PUT',
       headers: {

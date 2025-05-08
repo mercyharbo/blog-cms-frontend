@@ -1,7 +1,8 @@
 import Image from '@tiptap/extension-image'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { EditorToolbar } from './EditorToolbar'
 
 interface RichTextEditorProps {
   content: string
@@ -12,6 +13,8 @@ export default function RichTextEditor({
   content,
   onChange,
 }: RichTextEditorProps) {
+  const initialContentSet = useRef(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -37,9 +40,9 @@ export default function RichTextEditor({
     },
   })
 
-  // Process markdown content when it's loaded
+  // Process and set initial content only once when editor is ready
   useEffect(() => {
-    if (editor && content) {
+    if (editor && content && !initialContentSet.current) {
       const processContent = (markdown: string) => {
         // First clean up standalone hashes and multiple line breaks
         const cleanContent = markdown
@@ -55,56 +58,55 @@ export default function RichTextEditor({
         // Split into sections while preserving valid headers
         const sections = cleanContent.split(/(?=^#+\s+[^#\n]+$)/m)
 
-        return (
-          sections
-            .map((section) => {
-              return (
-                section
-                  .trim()
-                  // Process headings (only when they start a line and have text)
-                  .replace(/^###\s+([^#\n]+)$/m, '<h3>$1</h3>')
-                  .replace(/^##\s+([^#\n]+)$/m, '<h2>$1</h2>')
-                  .replace(/^#\s+([^#\n]+)$/m, '<h1>$1</h1>')
-                  // Process formatting
-                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                  .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                  // Process lists
-                  .replace(/^\s*[-*+]\s+(.*)$/gm, '<ul><li>$1</li></ul>')
-                  .replace(/^\s*\d+\.\s+(.*)$/gm, '<ol><li>$1</li></ol>')
-                  // Process blockquotes
-                  .replace(/^>\s(.+)$/gm, '<blockquote><p>$1</p></blockquote>')
-                  // Process images
-                  .replace(
-                    /!\[.*?\]\((data:image\/[^;]+;base64,[^)]+)\)/g,
-                    '<img src="$1" />'
-                  )
-              )
-            })
-            .filter(Boolean) // Remove empty sections
-            .join('\n\n')
-            // Process paragraphs
-            .split(/\n\n+/)
-            .map((para) => {
-              const trimmed = para.trim()
-              if (!trimmed) return '' // Skip empty paragraphs
-              if (trimmed.startsWith('<')) return trimmed
-              return `<p>${trimmed}</p>`
-            })
-            .filter(Boolean) // Remove empty strings
-            .join('\n\n')
-        )
+        return sections
+          .map((section) => {
+            return (
+              section
+                .trim()
+                // Process headings (only when they start a line and have text)
+                .replace(/^###\s+([^#\n]+)$/m, '<h3>$1</h3>')
+                .replace(/^##\s+([^#\n]+)$/m, '<h2>$1</h2>')
+                .replace(/^#\s+([^#\n]+)$/m, '<h1>$1</h1>')
+                // Process formatting
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Process lists
+                .replace(/^\s*[-*+]\s+(.*)$/gm, '<ul><li>$1</li></ul>')
+                .replace(/^\s*\d+\.\s+(.*)$/gm, '<ol><li>$1</li></ol>')
+                // Process blockquotes
+                .replace(/^>\s(.+)$/gm, '<blockquote><p>$1</p></blockquote>')
+                // Process images
+                .replace(
+                  /!\[.*?\]\((data:image\/[^;]+;base64,[^)]+)\)/g,
+                  '<img src="$1" />'
+                )
+            )
+          })
+          .filter(Boolean)
+          .join('\n\n')
+          .split(/\n\n+/)
+          .map((para) => {
+            const trimmed = para.trim()
+            if (!trimmed) return ''
+            if (trimmed.startsWith('<')) return trimmed
+            return `<p>${trimmed}</p>`
+          })
+          .filter(Boolean)
+          .join('\n\n')
       }
 
       const processedContent = processContent(content)
       editor.commands.setContent(processedContent)
+      initialContentSet.current = true
     }
-  }, [content, editor])
+  }, [editor, content])
 
   return (
-    <div className='min-h-[400px] border rounded-lg overflow-hidden'>
+    <div className='min-h-[400px] border rounded-lg overflow-hidden flex flex-col'>
+      <EditorToolbar editor={editor} />
       <EditorContent
         editor={editor}
-        className='prose prose-slate dark:prose-invert max-w-none p-4'
+        className='prose prose-slate dark:prose-invert max-w-none p-4 flex-1'
       />
     </div>
   )
