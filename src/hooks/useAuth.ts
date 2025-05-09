@@ -1,23 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import Cookies from 'universal-cookie'
+import { AuthContext } from '@/context/AuthContext'
+import { useContext } from 'react'
 
 export function useAuth() {
-  const [token, setToken] = useState<string | null>(null)
-  const cookies = useMemo(() => new Cookies(), [])
-
-  useEffect(() => {
-    const userToken = cookies.get('token') || null
-    setToken(userToken)
-  }, [cookies])
-
-  const updateToken = () => {
-    const userToken = cookies.get('token') || null
-    setToken(userToken)
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-
-  return {
-    token,
-    isAuthenticated: !!token,
-    updateToken,
-  }
+  return context
 }

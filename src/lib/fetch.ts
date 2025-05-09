@@ -1,3 +1,5 @@
+import Cookies from 'universal-cookie'
+
 type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
 interface FetchOptions {
@@ -36,7 +38,8 @@ export async function fetchApi<T>(
 
     // Add auth token if required
     if (requireAuth) {
-      const token = getCookie('access_token')
+      const cookies = new Cookies()
+      const token = cookies.get('access_token')
       if (!token) {
         throw new Error('Authentication required')
       }
@@ -63,14 +66,4 @@ export async function fetchApi<T>(
       error: err instanceof Error ? err.message : 'Something went wrong',
     }
   }
-}
-
-// Helper function to get cookie value
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null
-
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop()?.split(';').shift() ?? null
-  return null
 }

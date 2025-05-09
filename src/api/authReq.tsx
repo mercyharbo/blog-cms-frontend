@@ -1,5 +1,4 @@
 import { LoginResponse } from '@/types/auth'
-
 import Cookies from 'universal-cookie'
 
 export async function postUserLogin(email: string, password: string) {
@@ -23,15 +22,6 @@ export async function postUserLogin(email: string, password: string) {
   if (data.session) {
     cookiestore.set('access_token', data.session.access_token, {
       expires: new Date(data.session.expires_at * 1000),
-      secure: true,
-      sameSite: 'strict',
-    })
-
-    const refreshTokenExpiry = new Date(data.session.expires_at * 1000)
-    refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7)
-
-    cookiestore.set('refresh_token', data.session.refresh_token, {
-      expires: refreshTokenExpiry,
       secure: true,
       sameSite: 'strict',
     })
@@ -59,7 +49,6 @@ export async function postUserLogout() {
   // Clear cookies on logout
   if (data.success) {
     cookiestore.remove('access_token')
-    cookiestore.remove('refresh_token')
   }
 
   return data
@@ -85,3 +74,95 @@ export async function postUserRegister(email: string, password: string) {
 
   return data
 }
+
+export async function postUserForgotPassword(email: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+      }),
+    }
+  )
+
+  const data = await res.json()
+
+  return data
+}
+
+export async function postUserResetPassword(
+  token: string,
+  newPassword: string
+) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        token,
+        newPassword,
+      }),
+    }
+  )
+
+  const data = await res.json()
+
+  return data
+}
+
+export async function getUserProfile() {
+  const cookie_store = new Cookies()
+  const access_token = cookie_store.get('access_token')
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${access_token}`,
+    },
+  })
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch content types')
+  }
+
+  return data
+}
+
+// export async function getUserProfile() {
+//   const cookiestore = new Cookies()
+//   const access_token = cookiestore.get('access_token')
+
+//   try {
+//     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+//       method: 'GET',
+//       headers: {
+//         // 'Content-Type': 'application/json',
+//         // Accept: 'application/json',
+//         Authorization: `Bearer ${access_token}`,
+//       },
+//     })
+
+//     if (res.status === 401) {
+//       throw new Error('Authentication failed')
+//     }
+
+//     const data = await res.json()
+//     return data
+//   } catch (error) {
+//     console.error('Error fetching user profile:', error)
+//     throw error
+//   }
+// }

@@ -13,153 +13,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { useAuth } from '@/hooks/useAuth'
-import {
-  securityService,
-  type LoginActivity,
-  type Session,
-} from '@/services/security'
-import { useEffect, useState } from 'react'
-import { toast } from 'react-toastify'
+
+import { useState } from 'react'
 
 export default function SecurityPage() {
-  const { isAuthenticated } = useAuth()
-  const [activeSessions, setActiveSessions] = useState<Session[]>([])
-  const [loginHistory, setLoginHistory] = useState<LoginActivity[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [securitySettings, setSecuritySettings] = useState({
-    twoFactorEnabled: false,
-    emailNotifications: {
-      loginAttempts: true,
-      passwordChanges: true,
-      newDevices: true,
-    },
-  })
-
   // Password states
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-
-  // Load initial data
-  useEffect(() => {
-    const loadSecurityData = async () => {
-      try {
-        setIsLoading(true)
-        const [settings, sessions, history] = await Promise.all([
-          securityService.getSecuritySettings(),
-          securityService.getActiveSessions(),
-          securityService.getLoginHistory(),
-        ])
-
-        if (settings.data) {
-          setSecuritySettings(settings.data)
-        }
-        if (sessions.data) {
-          setActiveSessions(sessions.data)
-        }
-        if (history.data) {
-          setLoginHistory(history.data)
-        }
-      } catch (error) {
-        toast.error('Failed to load security settings')
-        console.error('Failed to load security data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    if (isAuthenticated) {
-      loadSecurityData()
-    }
-  }, [isAuthenticated])
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (newPassword !== confirmPassword) {
-      toast.error('New passwords do not match')
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      await securityService.changePassword(currentPassword, newPassword)
-      toast.success('Password updated successfully')
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-    } catch (error) {
-      toast.error('Failed to update password')
-      console.error('Password change error:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const toggleTwoFactor = async (enabled: boolean) => {
-    try {
-      setIsLoading(true)
-      if (enabled) {
-        await securityService.setupTwoFactor()
-        // TODO: Show QR code modal for 2FA setup
-        toast.info('2FA setup required')
-      } else {
-        await securityService.toggleTwoFactor(false)
-        toast.success('2FA disabled')
-      }
-
-      setSecuritySettings((prev) => ({
-        ...prev,
-        twoFactorEnabled: enabled,
-      }))
-    } catch (error) {
-      toast.error('Failed to update 2FA settings')
-      console.error('2FA toggle error:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleNotificationToggle = async (
-    key: keyof typeof securitySettings.emailNotifications
-  ) => {
-    try {
-      setIsLoading(true)
-      const newSettings = {
-        ...securitySettings,
-        emailNotifications: {
-          ...securitySettings.emailNotifications,
-          [key]: !securitySettings.emailNotifications[key],
-        },
-      }
-
-      await securityService.updateSecuritySettings(newSettings)
-      setSecuritySettings(newSettings)
-      toast.success('Notification settings updated')
-    } catch (error) {
-      toast.error('Failed to update notification settings')
-      console.error('Notification settings error:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleRevokeSession = async (sessionId: string) => {
-    try {
-      setIsLoading(true)
-      await securityService.revokeSession(sessionId)
-      setActiveSessions((prev) =>
-        prev.filter((session) => session.id !== sessionId)
-      )
-      toast.success('Session revoked successfully')
-    } catch (error) {
-      toast.error('Failed to revoke session')
-      console.error('Session revoke error:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <div className='container max-w-4xl py-6 space-y-8'>
@@ -187,7 +48,7 @@ export default function SecurityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handlePasswordChange} className='space-y-4'>
+              <form className='space-y-4'>
                 <div className='space-y-2'>
                   <Label htmlFor='currentPassword'>Current Password</Label>
                   <Input
@@ -195,7 +56,7 @@ export default function SecurityPage() {
                     type='password'
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    disabled={isLoading}
+                    // disabled={isLoading}
                   />
                 </div>
                 <div className='space-y-2'>
@@ -205,7 +66,7 @@ export default function SecurityPage() {
                     type='password'
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={isLoading}
+                    // disabled={isLoading}
                   />
                 </div>
                 <div className='space-y-2'>
@@ -215,11 +76,11 @@ export default function SecurityPage() {
                     type='password'
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
+                    // disabled={isLoading}
                   />
                 </div>
-                <Button type='submit' disabled={isLoading}>
-                  {isLoading ? 'Updating...' : 'Update Password'}
+                <Button type='submit'>
+                  {/* {isLoading ? 'Updating...' : 'Update Password'} */}
                 </Button>
               </form>
             </CardContent>
@@ -242,9 +103,9 @@ export default function SecurityPage() {
                   </p>
                 </div>
                 <Switch
-                  checked={securitySettings.twoFactorEnabled}
-                  onCheckedChange={toggleTwoFactor}
-                  disabled={isLoading}
+                //   checked={securitySettings.twoFactorEnabled}
+                //   onCheckedChange={toggleTwoFactor}
+                //   disabled={isLoading}
                 />
               </div>
             </CardContent>
@@ -267,11 +128,11 @@ export default function SecurityPage() {
                   </p>
                 </div>
                 <Switch
-                  checked={securitySettings.emailNotifications.loginAttempts}
-                  onCheckedChange={() =>
-                    handleNotificationToggle('loginAttempts')
-                  }
-                  disabled={isLoading}
+                //   checked={securitySettings.emailNotifications.loginAttempts}
+                //   onCheckedChange={() =>
+                //     handleNotificationToggle('loginAttempts')
+                //   }
+                //   disabled={isLoading}
                 />
               </div>
               <div className='flex items-center justify-between'>
@@ -282,11 +143,11 @@ export default function SecurityPage() {
                   </p>
                 </div>
                 <Switch
-                  checked={securitySettings.emailNotifications.passwordChanges}
-                  onCheckedChange={() =>
-                    handleNotificationToggle('passwordChanges')
-                  }
-                  disabled={isLoading}
+                //   checked={securitySettings.emailNotifications.passwordChanges}
+                //   onCheckedChange={() =>
+                //     handleNotificationToggle('passwordChanges')
+                //   }
+                //   disabled={isLoading}
                 />
               </div>
               <div className='flex items-center justify-between'>
@@ -297,9 +158,9 @@ export default function SecurityPage() {
                   </p>
                 </div>
                 <Switch
-                  checked={securitySettings.emailNotifications.newDevices}
-                  onCheckedChange={() => handleNotificationToggle('newDevices')}
-                  disabled={isLoading}
+                //   checked={securitySettings.emailNotifications.newDevices}
+                //   onCheckedChange={() => handleNotificationToggle('newDevices')}
+                //   disabled={isLoading}
                 />
               </div>
             </CardContent>
@@ -315,7 +176,7 @@ export default function SecurityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='space-y-4'>
+              {/* <div className='space-y-4'>
                 {activeSessions.length === 0 ? (
                   <p className='text-sm text-muted-foreground'>
                     No active sessions found
@@ -355,7 +216,7 @@ export default function SecurityPage() {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 
@@ -368,7 +229,7 @@ export default function SecurityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='space-y-4'>
+              {/* <div className='space-y-4'>
                 {loginHistory.length === 0 ? (
                   <p className='text-sm text-muted-foreground'>
                     No recent activity found
@@ -404,7 +265,7 @@ export default function SecurityPage() {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </div>

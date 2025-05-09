@@ -14,7 +14,6 @@ import {
   IoShieldOutline,
 } from 'react-icons/io5'
 import { MdArticle } from 'react-icons/md'
-import { ThemeToggle } from './theme/ThemeToggle'
 
 const linksItems = [
   { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
@@ -29,7 +28,7 @@ const linksItems = [
 
 const settingsLinks = [
   {
-    href: '/settings/general',
+    href: '/settings',
     label: 'General Settings',
     icon: <IoSettings />,
   },
@@ -49,7 +48,6 @@ export default function NavMenu() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
       <button
         onClick={toggleMenu}
         className='lg:hidden fixed top-4 right-4 z-50 p-2 rounded-md bg-gray-700 text-white'
@@ -66,21 +64,17 @@ export default function NavMenu() {
         z-40 fixed top-0 left-0
       `}
       >
-        {/* Logo Section */}
         <div className='flex items-center justify-between mb-8'>
           <Link href={'/'}>
             <h1 className='text-2xl lg:text-3xl font-bold capitalize'>logo</h1>
           </Link>
 
-          {/* Mobile close button */}
           <button onClick={toggleMenu} className='lg:hidden p-2 -mr-2'>
             <IoCloseOutline size={24} />
           </button>
         </div>
 
-        {/* Main Navigation Section */}
         <div className='flex-1 flex flex-col gap-8'>
-          {/* Manage Section */}
           <div className='flex flex-col gap-4'>
             <span className='text-sm font-medium text-gray-400 uppercase tracking-wider'>
               manage
@@ -103,7 +97,6 @@ export default function NavMenu() {
             </div>
           </div>
 
-          {/* Settings Section */}
           <div className='flex flex-col gap-4'>
             <span className='text-sm font-medium text-gray-400 uppercase tracking-wider'>
               settings
@@ -127,12 +120,6 @@ export default function NavMenu() {
           </div>
         </div>
 
-        <div className='flex items-center gap-3 py-2'>
-          <span className=''>Mode:</span>
-          <ThemeToggle />
-        </div>
-
-        {/* User Profile Section */}
         <div className='mt-auto pt-4 border-t border-gray-700'>
           <div className='flex items-center gap-3 p-2 rounded-md'>
             <div className='w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center'>
@@ -146,7 +133,6 @@ export default function NavMenu() {
         </div>
       </nav>
 
-      {/* Overlay for mobile */}
       {isOpen && (
         <div
           className='fixed inset-0 bg-black/40 bg-opacity-50 lg:hidden z-30'

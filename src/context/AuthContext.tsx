@@ -1,5 +1,6 @@
 'use client'
 
+import { postUserLogout } from '@/api/authReq'
 import { useRouter } from 'next/navigation'
 import {
   createContext,
@@ -13,11 +14,11 @@ import Cookies from 'universal-cookie'
 
 interface AuthContextType {
   isAuthenticated: boolean
-  logout: () => void
+  logout: () => Promise<void>
   checkAuth: () => boolean
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -30,12 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return !!token
   }, [cookies])
 
-  const logout = useCallback(() => {
-    cookies.remove('access_token')
-    cookies.remove('refresh_token')
-    setIsAuthenticated(false)
-    router.push('/')
-  }, [cookies, router])
+  const logout = useCallback(async () => {
+    const response = await postUserLogout()
+    if (response.success) {
+      setIsAuthenticated(false)
+      router.push('/')
+    }
+  }, [router])
 
   useEffect(() => {
     checkAuth()

@@ -1,6 +1,7 @@
 'use client'
 
 import { postUserRegister } from '@/api/authReq'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
@@ -52,8 +53,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className='min-h-screen px-5 flex items-center justify-center bg-gray-100'>
-      <div className='bg-white p-5 lg:p-10 rounded-lg shadow-md w-full flex flex-col items-center gap-5 lg:w-5/12'>
+    <div className='min-h-screen px-5 flex items-center justify-center'>
+      <div className='bg-white dark:bg-accent-foreground p-5 lg:p-10 rounded-lg shadow-md w-full flex flex-col items-center gap-5 lg:w-5/12'>
         <div className='flex flex-col items-center justify-center gap-4 mb-6'>
           {/* <img src='/logo.png' alt='Logo' className='h-16 w-16' /> */}
           <h1 className='text-2xl font-bold'>Create an Account</h1>
@@ -102,6 +103,13 @@ export default function SignupPage() {
             {loading ? 'Creating Account...' : 'Sign Up'}
           </Button>
         </form>
+
+        <p className='text-center text-gray-600 flex items-center justify-center gap-1'>
+          Have an account?{' '}
+          <Link href='/' className='text-blue-600 hover:underline'>
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   )
