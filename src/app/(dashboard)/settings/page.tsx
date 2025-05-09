@@ -1,6 +1,6 @@
 'use client'
 
-import { getUserProfile } from '@/api/authReq'
+import { getUserProfile, updateUserProfile } from '@/api/authReq'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import PageLoadingSpinner from '@/components/ui/PageLoadingSpinner'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
@@ -21,51 +22,23 @@ import {
   setLoading,
   setUserProfile,
 } from '@/store/features/userSlice'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
-// const TIMEZONES = [
-//   { value: 'UTC', label: 'UTC' },
-//   { value: 'America/New_York', label: 'Eastern Time' },
-//   { value: 'America/Chicago', label: 'Central Time' },
-//   { value: 'America/Denver', label: 'Mountain Time' },
-//   { value: 'America/Los_Angeles', label: 'Pacific Time' },
-//   { value: 'Europe/London', label: 'London' },
-//   { value: 'Europe/Paris', label: 'Paris' },
-//   { value: 'Asia/Tokyo', label: 'Tokyo' },
-// ]
-
-// const DATE_FORMATS = [
-//   { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-//   { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-//   { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-// ]
-
-// const LANGUAGES = [
-//   { value: 'en', label: 'English' },
-//   { value: 'es', label: 'Español' },
-//   { value: 'fr', label: 'Français' },
-//   { value: 'de', label: 'Deutsch' },
-// ]
-
 export default function GeneralSettingsPage() {
-  // const { isAuthenticated } = useAuth()
   const dispatch = useAppDispatch()
   const { profile, loading: isLoading } = useAppSelector((state) => state.user)
-  // const [settings, setSettings] = useState<GeneralSettings>({
-  //   language: 'en',
-  //   timezone: 'UTC',
-  //   dateFormat: 'MM/DD/YYYY',
-  //   editorDefaults: {
-  //     spellCheck: true,
-  //     autoSave: true,
-  //     autoSaveInterval: 30,
-  //   },
-  //   notifications: {
-  //     browser: true,
-  //     email: true,
-  //   },
-  // })
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
+  }
 
   const getUserDetails = async () => {
     try {
@@ -84,6 +57,63 @@ export default function GeneralSettingsPage() {
   useEffect(() => {
     getUserDetails()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!profile) return
+
+    try {
+      setIsUpdating(true)
+      const profileData = {
+        first_name: profile.profile.first_name,
+        last_name: profile.profile.last_name,
+        bio: profile.profile.bio,
+        avatar_url: profile.profile.avatar_url || '',
+      }
+
+      const data = await updateUserProfile(profileData)
+
+      if (data) {
+        toast.success(data.message || 'Profile updated successfully')
+        setTimeout(() => {
+          window.location.reload()
+        }, 5000)
+      } else {
+        toast.error('Failed to update profile')
+      }
+    } catch (error) {
+      toast.error('Failed to update profile')
+      console.error('Profile update error:', error)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const base64 = await convertToBase64(file)
+      setImagePreview(base64)
+
+      // Update the profile with the new avatar_url
+      if (profile) {
+        dispatch(
+          setUserProfile({
+            ...profile,
+            profile: {
+              ...profile.profile,
+              avatar_url: base64,
+            },
+          })
+        )
+      }
+    } catch (error) {
+      toast.error('Failed to process image')
+      console.error('Image processing error:', error)
+    }
+  }
 
   // const handleSettingsUpdate = async (
   //   newSettings: Partial<GeneralSettings>
@@ -105,6 +135,10 @@ export default function GeneralSettingsPage() {
   //     dispatch(setLoading(false))
   //   }
   // }
+
+  if (isLoading) {
+    return <PageLoadingSpinner />
+  }
 
   return (
     <div className='container max-w-4xl py-6 space-y-8'>
@@ -133,11 +167,15 @@ export default function GeneralSettingsPage() {
             </CardHeader>
             <CardContent>
               <form
-                // onSubmit={handleProfileUpdate}
+                onSubmit={handleProfileUpdate}
                 className='flex flex-col gap-8 w-full'
               >
                 <Avatar className='w-24 h-24'>
-                  <AvatarImage src={profile?.profile.avatar_url || ''} />
+                  <AvatarImage
+                    src={imagePreview || profile?.profile.avatar_url || ''}
+                    className='object-cover'
+                    alt='Profile Picture'
+                  />
                   <AvatarFallback>{profile?.profile.first_name}</AvatarFallback>
                 </Avatar>
 
@@ -158,7 +196,7 @@ export default function GeneralSettingsPage() {
                           })
                         )
                       }
-                      disabled={isLoading}
+                      disabled={isUpdating}
                     />
                   </div>
                   <div className='space-y-2'>
@@ -177,7 +215,7 @@ export default function GeneralSettingsPage() {
                           })
                         )
                       }
-                      disabled={isLoading}
+                      disabled={isUpdating}
                     />
                   </div>
                 </div>
@@ -194,25 +232,11 @@ export default function GeneralSettingsPage() {
                 </div>
 
                 <div className='space-y-2'>
-                  <Label htmlFor='phone'>Phone</Label>
-                  <Input
-                    id='phone'
-                    type='tel'
-                    value={profile?.phone || ''}
-                    onChange={(e) =>
-                      dispatch(
-                        setUserProfile({ ...profile!, phone: e.target.value })
-                      )
-                    }
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className='space-y-2'>
                   <Label htmlFor='bio'>Bio</Label>
                   <Textarea
                     id='bio'
                     rows={5}
+                    placeholder='Tell us about yourself...'
                     onChange={(e) =>
                       dispatch(
                         setUserProfile({
@@ -225,7 +249,8 @@ export default function GeneralSettingsPage() {
                       )
                     }
                     value={profile?.profile.bio || ''}
-                    disabled={isLoading}
+                    disabled={isUpdating}
+                    className='h-[8rem]'
                   />
                 </div>
 
@@ -236,12 +261,13 @@ export default function GeneralSettingsPage() {
                     type='file'
                     accept='image/*'
                     className='bg-gray-50'
-                    disabled={isLoading}
+                    disabled={isUpdating}
+                    onChange={handleImageChange}
                   />
                 </div>
 
-                <Button type='submit' disabled={isLoading}>
-                  {isLoading ? 'Updating...' : 'Update Profile'}
+                <Button type='submit' disabled={isUpdating}>
+                  {isUpdating ? 'Updating...' : 'Update Profile'}
                 </Button>
               </form>
             </CardContent>

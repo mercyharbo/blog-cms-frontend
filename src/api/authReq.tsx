@@ -31,8 +31,6 @@ export async function postUserLogin(email: string, password: string) {
 }
 
 export async function postUserLogout() {
-  const cookiestore = new Cookies()
-
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
     {
@@ -131,6 +129,32 @@ export async function getUserProfile() {
 
   if (!res.ok) {
     throw new Error(data.error || 'Failed to fetch content types')
+  }
+
+  return data
+}
+
+export async function updateUserProfile(profile: any) {
+  const cookie_store = new Cookies()
+  const access_token = cookie_store.get('access_token')
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${access_token}`,
+      },
+      body: JSON.stringify(profile),
+    }
+  )
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update user profile')
   }
 
   return data
