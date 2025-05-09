@@ -138,7 +138,7 @@ export default function PostListPage() {
         // Fetch posts again after successful deletion
         setTimeout(() => {
           window.location.reload()
-        }, 10000)
+        }, 5000)
       } catch (error) {
         console.error('Error deleting post:', error)
       }
