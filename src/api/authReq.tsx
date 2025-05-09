@@ -1,17 +1,26 @@
 import { fetchApi } from '@/lib/fetch'
-import { LoginResponse, UserProfile } from '@/types/auth'
+import { UserProfile } from '@/types/auth'
 import Cookies from 'universal-cookie'
 
 export async function postUserLogin(email: string, password: string) {
   const cookiestore = new Cookies()
-  const data = await fetchApi<
-    LoginResponse,
-    unknown,
-    Pick<UserProfile, 'id' | 'email'>
-  >('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  })
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to login')
+  }
 
   if (data.session) {
     cookiestore.set('access_token', data.session.access_token, {
@@ -25,33 +34,92 @@ export async function postUserLogin(email: string, password: string) {
 }
 
 export async function postUserLogout() {
-  return fetchApi('/api/auth/logout', {
-    method: 'POST',
-  })
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${new Cookies().get('access_token')}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to logout')
+  }
+
+  return response.json()
 }
 
 export async function postUserRegister(email: string, password: string) {
-  return fetchApi('/api/auth/signup', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  })
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to register')
+  }
+
+  return data
 }
 
 export async function postUserForgotPassword(email: string) {
-  return fetchApi('/api/auth/forgot-password', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  })
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to process forgot password request')
+  }
+
+  return data
 }
 
 export async function postUserResetPassword(
   token: string,
   newPassword: string
 ) {
-  return fetchApi('/api/auth/reset-password', {
-    method: 'POST',
-    body: JSON.stringify({ token, newPassword }),
-  })
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ token, newPassword }),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to reset password')
+  }
+
+  return data
 }
 
 export async function getUserProfile() {
@@ -67,9 +135,23 @@ export async function updateUserProfile(
     'first_name' | 'last_name' | 'bio' | 'avatar_url'
   >
 ) {
-  return fetchApi<{ message: string }>('/api/auth/profile', {
-    method: 'PUT',
-    requireAuth: true,
-    body: JSON.stringify(profile),
-  })
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${new Cookies().get('access_token')}`,
+      },
+      body: JSON.stringify(profile),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to update profile')
+  }
+
+  return data
 }
