@@ -184,7 +184,7 @@ export default function PostForm({
         }
         toast.success('Post updated successfully')
         setTimeout(() => {
-          router.push('/dashboard')
+          window.location.reload()
         }, 5000)
       } else {
         const data = await createContent(activePostTypeId, payload)
