@@ -83,7 +83,7 @@ export default function NavMenu() {
 
       <nav
         className={`
-        flex flex-col h-screen bg-primary dark:bg-background text-white p-6
+        flex flex-col h-screen bg-primary dark:bg-background text-white p-6 pb-20 lg:pb-6
         lg:w-1/5 flex-shrink-0 dark:border-r
         transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -150,7 +150,7 @@ export default function NavMenu() {
           size={'lg'}
           onClick={handleUserLogout}
           disabled={isLoggingOut}
-          className='bg-transparent flex justify-start items-center gap-3 hover:bg-gray-700 text-gray-300'
+          className='bg-transparent flex justify-start items-center gap-3 hover:bg-gray-700 text-gray-300 mt-auto mb-8 lg:mb-0'
         >
           <BiLogOut />
           <span className='text-sm'>Logout</span>
