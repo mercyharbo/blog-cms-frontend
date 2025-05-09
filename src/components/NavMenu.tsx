@@ -1,9 +1,10 @@
 'use client'
 
+import { postUserLogout } from '@/api/authReq'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { BiCategory } from 'react-icons/bi'
+import { BiCategory, BiLogOut } from 'react-icons/bi'
 import { FaUsers } from 'react-icons/fa'
 import {
   IoCloseOutline,
@@ -14,6 +15,8 @@ import {
   IoShieldOutline,
 } from 'react-icons/io5'
 import { MdArticle } from 'react-icons/md'
+import Cookies from 'universal-cookie'
+import { Button } from './ui/button'
 
 const linksItems = [
   { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
@@ -41,10 +44,33 @@ const settingsLinks = [
 ]
 
 export default function NavMenu() {
+  const router = useRouter()
+  const cookiestore = new Cookies()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const toggleMenu = () => setIsOpen(!isOpen)
+
+  const handleUserLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      const data = await postUserLogout()
+      if (data) {
+        cookiestore.remove('access_token')
+
+        setTimeout(() => {
+          router.push('/')
+        }, 5000)
+      } else {
+        console.error('Logout failed:', data)
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <>
@@ -120,17 +146,15 @@ export default function NavMenu() {
           </div>
         </div>
 
-        <div className='mt-auto pt-4 border-t border-gray-700'>
-          <div className='flex items-center gap-3 p-2 rounded-md'>
-            <div className='w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center'>
-              <FaUsers className='text-lg' />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-sm font-medium'>John Doe</span>
-              <span className='text-xs text-gray-400'>john@example.com</span>
-            </div>
-          </div>
-        </div>
+        <Button
+          size={'lg'}
+          onClick={handleUserLogout}
+          disabled={isLoggingOut}
+          className='bg-transparent flex justify-start items-center gap-3 hover:bg-gray-700 text-gray-300'
+        >
+          <BiLogOut />
+          <span className='text-sm'>Logout</span>
+        </Button>
       </nav>
 
       {isOpen && (

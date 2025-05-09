@@ -46,11 +46,6 @@ export async function postUserLogout() {
 
   const data = await res.json()
 
-  // Clear cookies on logout
-  if (data.success) {
-    cookiestore.remove('access_token')
-  }
-
   return data
 }
 
@@ -140,29 +135,3 @@ export async function getUserProfile() {
 
   return data
 }
-
-// export async function getUserProfile() {
-//   const cookiestore = new Cookies()
-//   const access_token = cookiestore.get('access_token')
-
-//   try {
-//     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-//       method: 'GET',
-//       headers: {
-//         // 'Content-Type': 'application/json',
-//         // Accept: 'application/json',
-//         Authorization: `Bearer ${access_token}`,
-//       },
-//     })
-
-//     if (res.status === 401) {
-//       throw new Error('Authentication failed')
-//     }
-
-//     const data = await res.json()
-//     return data
-//   } catch (error) {
-//     console.error('Error fetching user profile:', error)
-//     throw error
-//   }
-// }
