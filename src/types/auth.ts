@@ -5,10 +5,7 @@ export interface LoginResponse {
     expires_in: number
     expires_at: number
   }
-  user: {
-    email: string
-    id: string
-  }
+  user: Pick<UserProfile, 'id' | 'email'>
 }
 
 export interface UserIdentity {
@@ -38,6 +35,9 @@ export interface UserProfile {
   confirmation_sent_at: string
   confirmed_at: string
   last_sign_in_at: string
+  created_at: string
+  updated_at: string
+  is_anonymous: boolean
   app_metadata: {
     provider: string
     providers: string[]
@@ -48,15 +48,27 @@ export interface UserProfile {
     phone_verified: boolean
     sub: string
   }
-  identities: UserIdentity[]
-  created_at: string
-  updated_at: string
-  is_anonymous: boolean
+  identities: Array<{
+    identity_id: string
+    id: string
+    created_at: string
+    updated_at: string
+    email: string
+    identity_data: {
+      email: string
+      email_verified: boolean
+      phone_verified: boolean
+      sub: string
+    }
+    last_sign_in_at: string
+    provider: string
+    user_id: string
+  }>
   profile: {
     first_name: string
     last_name: string
-    avatar_url: string | null
-    bio: string | null
+    avatar_url: string
+    bio: string
   }
 }
 

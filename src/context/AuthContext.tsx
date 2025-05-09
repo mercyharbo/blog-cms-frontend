@@ -27,21 +27,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(() => {
     const token = cookies.get('access_token')
-    setIsAuthenticated(!!token)
-    return !!token
-  }, [cookies])
+    if (!token) {
+      setIsAuthenticated(false)
+      cookies.remove('access_token')
+      router.replace('/')
+      return false
+    }
+    setIsAuthenticated(true)
+    return true
+  }, [cookies, router])
 
   const logout = useCallback(async () => {
-    const response = await postUserLogout()
-    if (response.success) {
+    try {
+      await postUserLogout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      cookies.remove('access_token')
       setIsAuthenticated(false)
-      router.push('/')
+      router.replace('/')
     }
-  }, [router])
+  }, [cookies, router])
 
+  // Check authentication status on mount and when location changes
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
+
+  // Listen for token expiration or removal
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'access_token' && !e.newValue) {
+        setIsAuthenticated(false)
+        router.replace('/')
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [router])
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, logout, checkAuth }}>

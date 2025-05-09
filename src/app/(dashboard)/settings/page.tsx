@@ -43,20 +43,23 @@ export default function GeneralSettingsPage() {
   const getUserDetails = async () => {
     try {
       dispatch(setLoading(true))
-      const { user } = await getUserProfile()
-      if (user) {
-        dispatch(setUserProfile(user))
+      const data = await getUserProfile()
+      console.log('User data:', data)
+      if (data.user) {
+        dispatch(setUserProfile(data.user))
       }
     } catch (error) {
       toast.error('Failed to load settings')
       console.error('Failed to load data:', error)
       dispatch(setError('Failed to load user profile'))
+    } finally {
+      dispatch(setLoading(false))
     }
   }
 
   useEffect(() => {
     getUserDetails()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,27 +117,6 @@ export default function GeneralSettingsPage() {
       console.error('Image processing error:', error)
     }
   }
-
-  // const handleSettingsUpdate = async (
-  //   newSettings: Partial<GeneralSettings>
-  // ) => {
-  //   try {
-  //     dispatch(setLoading(true))
-  //     const response = await generalService.updateGeneralSettings({
-  //       ...settings,
-  //       ...newSettings,
-  //     })
-  //     if (response.data) {
-  //       setSettings(response.data)
-  //       toast.success('Settings updated successfully')
-  //     }
-  //   } catch (error) {
-  //     toast.error('Failed to update settings')
-  //     console.error('Settings update error:', error)
-  //   } finally {
-  //     dispatch(setLoading(false))
-  //   }
-  // }
 
   if (isLoading) {
     return <PageLoadingSpinner />

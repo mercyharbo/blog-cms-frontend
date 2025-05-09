@@ -80,6 +80,7 @@ export default function SecurityPage() {
                   />
                 </div>
                 <Button type='submit'>
+                  Update Password
                   {/* {isLoading ? 'Updating...' : 'Update Password'} */}
                 </Button>
               </form>

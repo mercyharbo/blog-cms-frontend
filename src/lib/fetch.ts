@@ -1,69 +1,74 @@
+import { UserProfile } from '@/types/auth'
 import Cookies from 'universal-cookie'
 
-type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+const cookies = new Cookies()
+let isRedirecting = false
 
-interface FetchOptions {
-  method?: RequestMethod
-  // Replace 'any' with a more specific type
-  body?: Record<string, unknown> | string | FormData | null
-  headers?: HeadersInit
-  cache?: RequestCache
-  revalidate?: number
+interface RequestOptions extends RequestInit {
   requireAuth?: boolean
 }
 
-interface ApiResponse<T> {
-  data: T | null
-  error: string | null
+interface ApiResponse<T = unknown, U = UserProfile> {
+  message?: string
+  error?: string
+  user?: U
+  data?: T
+  session?: {
+    access_token: string
+    expires_in: number
+    expires_at: number
+  }
 }
 
-export async function fetchApi<T>(
-  endpoint: string,
-  options: FetchOptions = {}
-): Promise<ApiResponse<T>> {
+export async function fetchApi<
+  T extends ApiResponse<D, U>,
+  D = unknown,
+  U = UserProfile
+>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const { requireAuth = false, ...fetchOptions } = options
   const baseUrl = process.env.NEXT_PUBLIC_API_URL
-  const {
-    method = 'GET',
-    body,
-    headers = {},
-    requireAuth = false,
-    ...restOptions
-  } = options
+  const url = `${baseUrl}${endpoint}`
 
-  try {
-    const requestHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(headers as Record<string, string>),
-    }
-
-    // Add auth token if required
-    if (requireAuth) {
-      const cookies = new Cookies()
-      const token = cookies.get('access_token')
-      if (!token) {
-        throw new Error('Authentication required')
+  if (requireAuth) {
+    const token = cookies.get('access_token')
+    if (!token) {
+      if (!isRedirecting) {
+        isRedirecting = true
+        cookies.remove('access_token')
+        window.location.href = '/'
       }
-      requestHeaders.Authorization = `Bearer ${token}`
+      throw new Error('No auth token')
     }
-
-    const res = await fetch(`${baseUrl}${endpoint}`, {
-      method,
-      headers: requestHeaders,
-      body: body ? JSON.stringify(body) : undefined,
-      ...restOptions,
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      throw new Error(data.message || 'Something went wrong')
-    }
-
-    return { data, error: null }
-  } catch (err) {
-    return {
-      data: null,
-      error: err instanceof Error ? err.message : 'Something went wrong',
+    fetchOptions.headers = {
+      ...fetchOptions.headers,
+      Authorization: `Bearer ${token}`,
     }
   }
+
+  const res = await fetch(url, {
+    ...fetchOptions,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...fetchOptions.headers,
+    },
+  })
+
+  const data = await res.json()
+
+  // Handle all 400-level status codes by removing token and redirecting
+  if (res.status >= 400 && res.status < 500) {
+    if (!isRedirecting) {
+      isRedirecting = true
+      cookies.remove('access_token')
+      window.location.href = '/'
+    }
+    throw new Error(data.error || `Request failed with status ${res.status}`)
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || 'API request failed')
+  }
+
+  return data as T
 }
