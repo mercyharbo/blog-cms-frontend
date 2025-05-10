@@ -19,7 +19,7 @@ import {
 import { ContentType, Post } from '@/types/content'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
@@ -54,7 +54,33 @@ export default function PostListPage() {
     title: string
     postTypeId: string
   } | null>(null)
-  const contentTypeReq = async () => {
+
+  const getPostContents = useCallback(
+    async (contentTypeId?: string) => {
+      try {
+        const data = await getContent(contentTypeId)
+
+        if (data.data.error) {
+          dispatch(setError(data.data.error))
+          toast.error(data.data.error)
+        } else if (data) {
+          dispatch(setPosts(data.data.contents))
+        }
+      } catch (error) {
+        let errorMsg = 'An error occurred while fetching content'
+        if (error instanceof Error) {
+          errorMsg = error.message
+        } else if (typeof error === 'string') {
+          errorMsg = error
+        }
+        dispatch(setError(errorMsg))
+        toast.error(errorMsg)
+      }
+    },
+    [dispatch]
+  )
+
+  const contentTypeReq = useCallback(async () => {
     dispatch(setLoading(true))
 
     try {
@@ -64,10 +90,7 @@ export default function PostListPage() {
         dispatch(setError(data.data.error))
         toast.error(data.data.error)
       } else if (data?.data?.contentTypes) {
-        // First store all content types for the dropdown
         dispatch(setContentTypes(data.data.contentTypes))
-
-        // Load all contents by default without selecting any content type
         await getPostContents()
       }
     } catch (error) {
@@ -82,43 +105,65 @@ export default function PostListPage() {
     } finally {
       dispatch(setLoading(false))
     }
-  }
-  const getPostContents = async (contentTypeId?: string) => {
-    try {
-      const data = await getContent(contentTypeId)
+  }, [dispatch, getPostContents])
 
-      if (data.data.error) {
-        dispatch(setError(data.data.error))
-        toast.error(data.data.error)
-      } else if (data) {
-        dispatch(setPosts(data.data.contents))
+  const handleContentTypeChange = useCallback(
+    async (contentType: ContentType | null) => {
+      setSelectedContentType(contentType)
+      dispatch(setLoading(true))
+      try {
+        await getPostContents(contentType?.id)
+      } finally {
+        dispatch(setLoading(false))
       }
-    } catch (error) {
-      let errorMsg = 'An error occurred while fetching content'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
-      dispatch(setError(errorMsg))
-      toast.error(errorMsg)
-    }
-  }
-  const handleDeleteModal = (post: Post) => {
-    setPostToDelete({
-      id: post.id,
-      title: post.data.title,
-      postTypeId: selectedContentType?.id ?? '',
-    })
-  }
+    },
+    [dispatch, getPostContents]
+  )
 
-  const handleConfirmDelete = async () => {
+  const handleDeleteModal = useCallback(
+    (post: Post) => {
+      setPostToDelete({
+        id: post.id,
+        title: post.data.title,
+        postTypeId: selectedContentType?.id ?? '',
+      })
+    },
+    [selectedContentType]
+  )
+
+  const deleteContentFunc = useCallback(
+    async (contentTypeId: string | undefined, postId: string) => {
+      try {
+        dispatch(setLoading(true))
+        const data = await deleteContent(contentTypeId, postId)
+
+        if (data.data.error) {
+          dispatch(setError(data.data.error))
+          toast.error(data.data.error)
+        } else if (data) {
+          toast.success(data.data.message)
+        }
+      } catch (error) {
+        let errorMsg = 'An error occurred while deleting content'
+        if (error instanceof Error) {
+          errorMsg = error.message
+        } else if (typeof error === 'string') {
+          errorMsg = error
+        }
+        dispatch(setError(errorMsg))
+        toast.error(errorMsg)
+      } finally {
+        dispatch(setLoading(false))
+      }
+    },
+    [dispatch]
+  )
+
+  const handleConfirmDelete = useCallback(async () => {
     if (postToDelete) {
       try {
         await deleteContentFunc(postToDelete.postTypeId, postToDelete.id)
         setPostToDelete(null)
-
-        // Fetch posts again after successful deletion
         setTimeout(() => {
           window.location.reload()
         }, 5000)
@@ -126,47 +171,7 @@ export default function PostListPage() {
         console.error('Error deleting post:', error)
       }
     }
-  }
-
-  /**
-   * The function `deleteContentFunc` is an asynchronous function that handles the deletion of content
-   * based on the content type and post ID, displaying success or error messages and updating the post
-   * list accordingly.
-   * @param {string} contentTypeId - The `contentTypeId` parameter in the `deleteContentFunc` function
-   * is a string that represents the type of content being deleted. It is used to identify the specific
-   * type of content that is being deleted, such as a post, comment, or any other type of content in the
-   * system.
-   * @param {string} postId - The `postId` parameter in the `deleteContentFunc` function is the unique
-   * identifier of the post that you want to delete. It is used to specify which post should be deleted
-   * when calling the `deleteContent` function.
-   */
-  const deleteContentFunc = async (
-    contentTypeId: string | undefined,
-    postId: string
-  ) => {
-    try {
-      dispatch(setLoading(true))
-      const data = await deleteContent(contentTypeId, postId)
-
-      if (data.data.error) {
-        dispatch(setError(data.data.error))
-        toast.error(data.data.error)
-      } else if (data) {
-        toast.success(data.data.message)
-      }
-    } catch (error) {
-      let errorMsg = 'An error occurred while deleting content'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
-      dispatch(setError(errorMsg))
-      toast.error(errorMsg)
-    } finally {
-      dispatch(setLoading(false))
-    }
-  }
+  }, [postToDelete, deleteContentFunc])
 
   /**
    * The function `getContentPreview` takes a post object as input and returns a preview of its content
@@ -197,18 +202,10 @@ export default function PostListPage() {
       ? `${plainText.substring(0, 100)}...`
       : plainText
   }
-  const handleContentTypeChange = async (contentType: ContentType | null) => {
-    setSelectedContentType(contentType)
-    dispatch(setLoading(true))
-    try {
-      await getPostContents(contentType?.id)
-    } finally {
-      dispatch(setLoading(false))
-    }
-  }
+
   useEffect(() => {
     contentTypeReq()
-  }, []) // Only run once on mount
+  }, [contentTypeReq])
 
   if (loading) {
     return <PageLoadingSpinner />
