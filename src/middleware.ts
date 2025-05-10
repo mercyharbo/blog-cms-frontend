@@ -3,15 +3,21 @@ import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')
-  const isAuthPage =
-    request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/signup'
+  const pathname = request.nextUrl.pathname
 
-  // If trying to access auth pages while logged in, redirect to dashboard
+  // Always allow access to the verification callback page
+  if (pathname === '/auth/callback') {
+    return NextResponse.next()
+  }
+
+  const isAuthPage = pathname === '/' || pathname === '/signup'
+
+  // Redirect authenticated users away from auth pages to dashboard
   if (isAuthPage && accessToken) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // If trying to access protected routes without auth, redirect to login
+  // Redirect unauthenticated users to login page when accessing protected routes
   if (!isAuthPage && !accessToken) {
     return NextResponse.redirect(new URL('/', request.url))
   }
@@ -20,5 +26,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/signup', '/dashboard/:path*'],
+  matcher: ['/', '/signup', '/dashboard/:path*', '/auth/callback'],
 }

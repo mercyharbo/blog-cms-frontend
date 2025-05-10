@@ -9,6 +9,7 @@ function VerificationPageContent() {
   const [verificationStatus, setVerificationStatus] = useState<
     'loading' | 'success' | 'error'
   >('loading')
+  const [errorMessage, setErrorMessage] = useState('')
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -18,16 +19,24 @@ function VerificationPageContent() {
         const token = searchParams.get('token')
         const type = searchParams.get('type')
 
-        if (!token || type !== 'signup') {
+        if (!token) {
+          setErrorMessage('Verification token is missing')
           setVerificationStatus('error')
           return
         }
 
-        // The verification has already been handled by Supabase automatically
-        // We just need to show a success message
+        if (type !== 'signup') {
+          setErrorMessage('Invalid verification type')
+          setVerificationStatus('error')
+          return
+        }
+
+        // Set a delay to show the success message for a moment
+        await new Promise((resolve) => setTimeout(resolve, 1500))
         setVerificationStatus('success')
       } catch (error) {
         console.error('Verification error:', error)
+        setErrorMessage('An unexpected error occurred during verification')
         setVerificationStatus('error')
       }
     }
@@ -47,21 +56,35 @@ function VerificationPageContent() {
       </div>
     )
   }
-
   if (verificationStatus === 'error') {
     return (
       <div className='min-h-screen flex items-center justify-center'>
         <div className='w-full max-w-md p-8 space-y-4 text-center'>
+          <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto'>
+            <svg
+              className='w-8 h-8 text-red-500'
+              fill='none'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth='2'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
+            >
+              <path d='M6 18L18 6M6 6l12 12'></path>
+            </svg>
+          </div>
           <h1 className='text-2xl font-bold text-red-600'>
             Verification Failed
           </h1>
           <p className='text-muted-foreground'>
-            Sorry, we couldn&apos;t verify your email address. The link might be
-            expired or invalid.
+            {errorMessage ||
+              "Sorry, we couldn't verify your email address. The link might be expired or invalid."}
           </p>
-          <Button asChild>
-            <Link href='/signup'>Try signing up again</Link>
-          </Button>
+          <div className='pt-4'>
+            <Button asChild>
+              <Link href='/signup'>Try signing up again</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
