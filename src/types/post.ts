@@ -5,7 +5,8 @@ export interface CreatePostData {
   slug: string
   author: string
   content: string
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'scheduled'
+  scheduled_at?: string | null
   cover_image: Image
   tags: string[]
   meta_title: string

@@ -185,26 +185,53 @@ export default function SinglePostPage({
           <div className='flex items-center gap-2'>
             <FiUser className='h-4 w-4' />
             <span>{currentPost?.data?.author}</span>
-          </div>
+          </div>{' '}
           <div className='flex items-center gap-2'>
-            <FiCalendar className='h-4 w-4' />
+            <FiCalendar className='h-4 w-4' />{' '}
             <time>
-              {new Date(currentPost?.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {currentPost?.status === 'scheduled' &&
+              currentPost?.scheduled_at ? (
+                <>
+                  Scheduled for{' '}
+                  {new Date(currentPost.scheduled_at).toLocaleDateString(
+                    'en-US',
+                    {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: 'numeric',
+                    }
+                  )}
+                </>
+              ) : (
+                <>
+                  Created on{' '}
+                  {new Date(currentPost?.created_at).toLocaleDateString(
+                    'en-US',
+                    {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    }
+                  )}
+                </>
+              )}
             </time>
-          </div>
+          </div>{' '}
           <Badge
             variant={
-              currentPost?.data?.status === 'published'
+              currentPost?.status === 'published'
                 ? 'default'
+                : currentPost?.status === 'scheduled'
+                ? 'destructive'
                 : 'secondary'
             }
             className='capitalize'
           >
-            {currentPost?.data?.status}
+            {currentPost?.status === 'scheduled'
+              ? '🕒 Scheduled'
+              : currentPost?.status}
           </Badge>
           <div className='flex flex-wrap gap-2'>
             {currentPost?.data?.tags.map((tag) => (

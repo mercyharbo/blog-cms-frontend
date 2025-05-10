@@ -38,7 +38,8 @@ const postSchema = z.object({
   slug: z.string(),
   author: z.string().min(1, 'Author is required'),
   content: z.string().min(1, 'Content is required'),
-  status: z.enum(['draft', 'published']),
+  status: z.enum(['draft', 'published', 'scheduled']),
+  scheduled_at: z.string().nullable().optional(),
   cover_image: z.object({
     alt: z.string(),
     url: z.string().url(),
@@ -56,17 +57,18 @@ interface PostFormProps {
   initialData?: {
     id: string
     content_type_id: string
+    status: 'draft' | 'published' | 'scheduled'
+    scheduled_at?: string | null
     data: {
       title: string
       slug: string
       author: string
       content: string
-      status: 'draft' | 'published'
-      cover_image?: { alt: string; url: string } // Changed from featuredImage to cover_image
+      cover_image?: { alt: string; url: string }
       tags: string[]
-      meta_title: string // Added meta_title
-      meta_keywords: string[] // Added meta_keywords
-      reading_time: number // Added reading_time
+      meta_title: string
+      meta_keywords: string[]
+      reading_time: number
     }
   }
   contentTypeId?: string // Changed from postTypeId to contentTypeId
@@ -133,7 +135,8 @@ export default function PostForm({
       slug: initialData?.data?.slug || '',
       author: initialData?.data?.author || '',
       content: initialData?.data?.content || '',
-      status: initialData?.data?.status || 'draft',
+      status: initialData?.status || 'draft',
+      scheduled_at: initialData?.scheduled_at ?? null,
       cover_image: initialData?.data?.cover_image || { alt: '', url: '' },
       tags: initialData?.data?.tags || [],
       meta_title: initialData?.data?.meta_title || '',
@@ -149,7 +152,6 @@ export default function PostForm({
     form.setValue('title', newTitle)
     form.setValue('slug', slug)
   }
-
   const handleSubmit = async (formData: CreatePostData) => {
     try {
       setIsSubmitting(true)
@@ -160,11 +162,33 @@ export default function PostForm({
         toast.error('Post type not found')
         return
       }
+      if (formData.status === 'scheduled') {
+        if (!formData.scheduled_at) {
+          toast.error('Schedule date and time is required for scheduled posts')
+          return
+        }
 
+        const scheduledDate = new Date(formData.scheduled_at)
+        if (scheduledDate <= new Date()) {
+          toast.error('Schedule date and time must be in the future')
+          return
+        }
+
+        // Convert to UTC ISO string for backend
+        formData.scheduled_at = scheduledDate.toISOString()
+      }
       const payload = {
-        ...formData,
+        title: formData.title,
+        slug: formData.slug,
+        author: formData.author,
+        content: formData.content,
+        status: formData.status,
+        scheduled_at: formData.scheduled_at,
+        cover_image: formData.cover_image,
         tags: Array.isArray(formData.tags) ? formData.tags : [],
-        status: formData.status || 'draft',
+        meta_title: formData.meta_title,
+        meta_keywords: formData.meta_keywords,
+        reading_time: formData.reading_time,
       }
 
       if (isEditing) {
@@ -178,8 +202,8 @@ export default function PostForm({
           initialData.id,
           payload
         )
-        if (data.data.error) {
-          toast.error(data.data.error)
+        if (data.data.message) {
+          toast.error(data.data.message)
           return
         }
         toast.success('Post updated successfully')
@@ -188,6 +212,7 @@ export default function PostForm({
         }, 5000)
       } else {
         const data = await createContent(activePostTypeId, payload)
+
         if (data.data.error) {
           toast.error(data.data.error)
           return
@@ -195,7 +220,7 @@ export default function PostForm({
         toast.success('Post created successfully')
         setTimeout(() => {
           router.push('/dashboard')
-        }, 10000)
+        }, 5000)
       }
 
       onSuccess?.()
@@ -248,7 +273,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='slug'
@@ -263,7 +287,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='author'
@@ -277,7 +300,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='tags'
@@ -295,25 +317,60 @@ export default function PostForm({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          />{' '}
+          <div className='space-y-4'>
+            <FormField
+              control={form.control}
+              name='status'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className='w-full p-2 border rounded-md dark:bg-black dark:text-white'
+                      onChange={(e) => {
+                        field.onChange(e.target.value)
+                        if (e.target.value !== 'scheduled') {
+                          form.setValue('scheduled_at', null)
+                        }
+                      }}
+                    >
+                      <option value='draft'>Draft</option>
+                      <option value='published'>Published</option>
+                      <option value='scheduled'>Scheduled</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name='status'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <FormControl>
-                  <select {...field} className='w-full p-2 border rounded-md'>
-                    <option value='draft'>Draft</option>
-                    <option value='published'>Published</option>
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            {form.watch('status') === 'scheduled' && (
+              <FormField
+                control={form.control}
+                name='scheduled_at'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule Date and Time</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='datetime-local'
+                        {...field}
+                        value={field.value || ''}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className='w-full p-2 border rounded-md'
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Select when you want this post to be published
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
-
+          </div>
           <FormField
             control={form.control}
             name='meta_title'
@@ -327,7 +384,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='meta_keywords'
@@ -346,7 +402,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='reading_time'
@@ -365,7 +420,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='cover_image'
@@ -387,7 +441,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name='content'
@@ -404,7 +457,6 @@ export default function PostForm({
               </FormItem>
             )}
           />
-
           <div className='flex justify-end gap-4'>
             <Button type='button' variant='outline'>
               Cancel

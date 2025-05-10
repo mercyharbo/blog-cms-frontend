@@ -119,16 +119,20 @@ export default function PostListPage() {
     },
     [dispatch, getPostContents]
   )
-
   const handleDeleteModal = useCallback(
     (post: Post) => {
+      // Find the content type ID that matches the post's content type name
+      const contentType = contentTypes.find(
+        (type) => type.name === post.content_types.name
+      )
+
       setPostToDelete({
         id: post.id,
         title: post.data.title,
-        postTypeId: selectedContentType?.id ?? '',
+        postTypeId: contentType?.id ?? '',
       })
     },
-    [selectedContentType]
+    [contentTypes]
   )
 
   const deleteContentFunc = useCallback(

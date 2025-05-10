@@ -87,7 +87,8 @@ export async function createContent(
     slug: string
     author: string
     content: string
-    status: 'draft' | 'published'
+    status: 'draft' | 'published' | 'scheduled'
+    scheduled_at?: string | null
     cover_image: ImageType
     tags: string[]
     meta_title: string
@@ -112,9 +113,9 @@ export async function createContent(
   )
 
   const data = await res.json()
-
+  console.log('createContent', data)
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to create content')
+    throw new Error(data.message)
   }
 
   return { data }
@@ -128,7 +129,8 @@ export async function updateContent(
     slug: string
     author: string
     content: string
-    status: 'draft' | 'published'
+    status: 'draft' | 'published' | 'scheduled'
+    scheduled_at?: string | null
     cover_image: ImageType
     tags: string[]
     meta_title: string

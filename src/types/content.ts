@@ -20,28 +20,12 @@ export interface PostData {
   slug: string
   author: string
   content: string
-  status: 'draft' | 'published'
   cover_image: Image
   social_image: Image
   tags: string[]
   meta_title: string
   meta_keywords: string[]
   reading_time: number
-}
-
-// Complete Post Type
-export interface Post extends BaseContent {
-  content_type_id: string
-  data: PostData
-}
-
-// Response Interfaces
-export interface ContentResponse {
-  contents: Post[]
-}
-
-export interface ContentDetailsResponse {
-  content: Post
 }
 
 // Content Type Field Interface
@@ -58,9 +42,35 @@ export interface ContentTypeField {
     imageOptions?: {
       alt: boolean
       caption: boolean
-      metadata?: boolean // Add if needed
+      metadata?: boolean
     }
   }
+}
+
+// Content Type Details Interface
+export interface ContentTypeDetails {
+  name: string
+  title: string
+  fields: ContentTypeField[]
+  created_at: string
+}
+
+// Complete Post Type
+export interface Post extends BaseContent {
+  content_type_id: string
+  content_types: ContentTypeDetails
+  status: 'draft' | 'published' | 'scheduled'
+  scheduled_at?: string | null
+  data: PostData
+}
+
+// Response Interfaces
+export interface ContentResponse {
+  contents: Post[]
+}
+
+export interface ContentDetailsResponse {
+  content: Post
 }
 
 // Content Type Interface
@@ -78,11 +88,7 @@ export interface ContentTypesResponse {
   contentTypes: ContentType[]
 }
 
-export interface ContentType {
-  id: string
-  name: string
-}
-
+// API Response Interface
 export interface ApiResponse<T> {
   data: T
   error?: string
@@ -99,6 +105,7 @@ export interface ContentStore {
   reset: () => void
 }
 
+// Content State Interface
 export interface ContentState {
   currentPost: Post | null
   posts: Post[]
