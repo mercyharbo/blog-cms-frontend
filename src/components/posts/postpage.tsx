@@ -54,7 +54,6 @@ export default function PostListPage() {
     title: string
     postTypeId: string
   } | null>(null)
-
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
 
@@ -80,6 +79,8 @@ export default function PostListPage() {
       }
       dispatch(setError(errorMsg))
       toast.error(errorMsg)
+    } finally {
+      dispatch(setLoading(false))
     }
   }
   const getPostContents = async (contentTypeId?: string) => {
@@ -205,10 +206,9 @@ export default function PostListPage() {
       dispatch(setLoading(false))
     }
   }
-
   useEffect(() => {
     contentTypeReq()
-  }, [])
+  }, []) // Only run once on mount
 
   if (loading) {
     return <PageLoadingSpinner />
@@ -216,11 +216,13 @@ export default function PostListPage() {
 
   return (
     <main className='container mx-auto py-10 space-y-6'>
-      <header className='flex flex-col lg:flex-row justify-between items-center w-full gap-5'>
+      <header className='flex flex-col items-start lg:flex-row md:flex-row md:justify-between md:items-center lg:justify-between lg:items-center w-full gap-5 sm:gap-8'>
         <h1 className='text-2xl font-bold'>Posts</h1>
-        <div className='flex items-center gap-5'>
-          <div className='flex items-center gap-2'>
-            <label className='text-sm text-gray-500'>Filter by type:</label>
+        <div className='flex flex-col items-start lg:flex-row lg:items-center gap-4 w-full lg:w-auto md:w-auto md:flex-row'>
+          <div className='flex flex-col w-full lg:w-auto lg:flex-row md:w-auto md:flex-row md:items-center items-start lg:items-center gap-3'>
+            <label className='text-sm text-gray-500 font-medium'>
+              Filter by type:
+            </label>
             <select
               value={selectedContentType?.id || ''}
               onChange={(e) => {
@@ -235,7 +237,7 @@ export default function PostListPage() {
                   }
                 }
               }}
-              className='border rounded-md px-2 py-1 h-12 text-sm bg-transparent text-black dark:bg-black dark:text-white '
+              className='border rounded-md w-full lg:w-auto md:w-auto px-3 py-2 h-12 text-sm bg-transparent text-black dark:bg-black dark:text-white focus:ring-2 focus:ring-primary/20'
             >
               <option value=''>All Content</option>
               {contentTypes.map((type) => (
@@ -250,22 +252,29 @@ export default function PostListPage() {
             href={`/dashboard/create-post${
               selectedContentType ? `?type=${selectedContentType.id}` : ''
             }`}
-            className='flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md'
+            className='w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2.5 rounded-md transition-colors'
           >
             <BiPlus className='w-5 h-5' />
             Create Post
           </Link>
         </div>
-      </header>
-
-      <div className='hide-scrollbar overflow-x-auto w-full border rounded-md'>
+      </header>{' '}
+      <div className='hide-scrollbar overflow-x-auto w-full border rounded-md bg-white dark:bg-black'>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-[40%]'>Title</TableHead>
-              <TableHead className='w-[20%]'>Author</TableHead>
-              <TableHead className='w-[20%]'>Last Updated</TableHead>
-              <TableHead className='w-[20%] text-right'>Actions</TableHead>
+              <TableHead className='w-full sm:w-[40%] min-w-[200px]'>
+                Title
+              </TableHead>
+              <TableHead className='hidden sm:table-cell w-[20%]'>
+                Author
+              </TableHead>
+              <TableHead className='hidden md:table-cell w-[20%]'>
+                Last Updated
+              </TableHead>
+              <TableHead className='w-[120px] sm:w-[20%] text-right'>
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -278,22 +287,29 @@ export default function PostListPage() {
             ) : (
               posts.map((post) => (
                 <TableRow key={post.id}>
+                  {' '}
                   <TableCell>
-                    <div className='flex flex-col gap-1'>
-                      <span className='font-medium truncate'>
-                        {post.data.title}
-                      </span>
+                    <div className='flex flex-col gap-1 min-w-[200px]'>
+                      <div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3'>
+                        <span className='font-medium truncate'>
+                          {post.data.title}
+                        </span>
+                        <span className='text-xs text-muted-foreground sm:hidden'>
+                          by {post.data.author || 'John Doe'} •{' '}
+                          {format(new Date(post.updated_at), 'MMM dd, yyyy')}
+                        </span>
+                      </div>
                       <span className='text-sm text-muted-foreground truncate'>
                         {getContentPreview(post)}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className='hidden sm:table-cell'>
                     <span className='truncate'>
                       {post.data.author || 'John Doe'}
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className='hidden md:table-cell'>
                     <span className='truncate'>
                       {format(new Date(post.updated_at), 'MMM dd, yyyy')}
                     </span>
@@ -301,7 +317,12 @@ export default function PostListPage() {
                   <TableCell className='text-right'>
                     <div className='flex items-center justify-end gap-2'>
                       <Link href={`/dashboard/${post.id}`}>
-                        <Button type='button' variant='outline' size='sm'>
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          className='h-9 w-9 p-0'
+                        >
                           <FiEdit2 className='h-4 w-4' />
                         </Button>
                       </Link>
@@ -309,6 +330,7 @@ export default function PostListPage() {
                         type='button'
                         variant='destructive'
                         size='sm'
+                        className='h-9 w-9 p-0'
                         onClick={() => handleDeleteModal(post)}
                       >
                         <FiTrash2 className='h-4 w-4' />
@@ -321,7 +343,6 @@ export default function PostListPage() {
           </TableBody>
         </Table>
       </div>
-
       <Dialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
         <DialogContent className='sm:max-w-[425px]'>
           <DialogHeader>
