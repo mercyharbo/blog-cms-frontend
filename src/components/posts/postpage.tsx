@@ -15,7 +15,6 @@ import {
   setError,
   setLoading,
   setPosts,
-  setPostTypeId,
 } from '@/store/features/contentSlice'
 import { ContentType, Post } from '@/types/content'
 import { format } from 'date-fns'
@@ -45,19 +44,17 @@ interface ContentBlock {
 
 export default function PostListPage() {
   const dispatch = useAppDispatch()
-  const { posts, loading, postTypeId } = useAppSelector(
+  const { posts, loading, contentTypes } = useAppSelector(
     (state) => state.content
   )
+  const [selectedContentType, setSelectedContentType] =
+    useState<ContentType | null>(null)
   const [postToDelete, setPostToDelete] = useState<{
     id: string
     title: string
     postTypeId: string
   } | null>(null)
 
-  /**
-   * The function `contentTypeReq` fetches content types, handles errors, and dispatches actions based on
-   * the retrieved data.
-   */
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
 
@@ -68,16 +65,11 @@ export default function PostListPage() {
         dispatch(setError(data.data.error))
         toast.error(data.data.error)
       } else if (data?.data?.contentTypes) {
+        // First store all content types for the dropdown
         dispatch(setContentTypes(data.data.contentTypes))
 
-        const postType: ContentType | undefined = data.data.contentTypes.find(
-          (type: ContentType) => type.name === 'post'
-        )
-
-        if (postType) {
-          dispatch(setPostTypeId(postType.id))
-          getPostContents(postType.id)
-        }
+        // Load all contents by default without selecting any content type
+        await getPostContents()
       }
     } catch (error) {
       let errorMsg = 'An error occurred while fetching content types'
@@ -90,15 +82,7 @@ export default function PostListPage() {
       toast.error(errorMsg)
     }
   }
-
-  /**
-   * The function `getPostContents` fetches post contents based on a content type ID and handles errors
-   * accordingly.
-   * @param {string} contentTypeId - The `contentTypeId` parameter in the `getPostContents` function is a
-   * string that represents the type of content to be fetched. It is used to retrieve content data based
-   * on the specified content type.
-   */
-  const getPostContents = async (contentTypeId: string) => {
+  const getPostContents = async (contentTypeId?: string) => {
     try {
       const data = await getContent(contentTypeId)
 
@@ -108,7 +92,6 @@ export default function PostListPage() {
       } else if (data) {
         dispatch(setPosts(data.data.contents))
       }
-      dispatch(setLoading(false))
     } catch (error) {
       let errorMsg = 'An error occurred while fetching content'
       if (error instanceof Error) {
@@ -120,12 +103,11 @@ export default function PostListPage() {
       toast.error(errorMsg)
     }
   }
-
   const handleDeleteModal = (post: Post) => {
     setPostToDelete({
       id: post.id,
       title: post.data.title,
-      postTypeId: postTypeId ?? '',
+      postTypeId: selectedContentType?.id ?? '',
     })
   }
 
@@ -157,7 +139,10 @@ export default function PostListPage() {
    * identifier of the post that you want to delete. It is used to specify which post should be deleted
    * when calling the `deleteContent` function.
    */
-  const deleteContentFunc = async (contentTypeId: string, postId: string) => {
+  const deleteContentFunc = async (
+    contentTypeId: string | undefined,
+    postId: string
+  ) => {
     try {
       dispatch(setLoading(true))
       const data = await deleteContent(contentTypeId, postId)
@@ -211,29 +196,66 @@ export default function PostListPage() {
       ? `${plainText.substring(0, 100)}...`
       : plainText
   }
+  const handleContentTypeChange = async (contentType: ContentType | null) => {
+    setSelectedContentType(contentType)
+    dispatch(setLoading(true))
+    try {
+      await getPostContents(contentType?.id)
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }
 
   useEffect(() => {
     contentTypeReq()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch])
+  }, [])
 
   if (loading) {
     return <PageLoadingSpinner />
   }
 
   return (
-    <main className='flex flex-col gap-5 space-y-10 w-full'>
-      <header className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
-        <h1 className='text-2xl font-semibold'>My Blog Posts</h1>
-        <Link href='/dashboard/create-post'>
-          <Button
-            size={'lg'}
-            variant={'default'}
-            className='h-12 w-full cursor-pointer sm:w-auto'
+    <main className='container mx-auto py-10 space-y-6'>
+      <header className='flex flex-col lg:flex-row justify-between items-center w-full gap-5'>
+        <h1 className='text-2xl font-bold'>Posts</h1>
+        <div className='flex items-center gap-5'>
+          <div className='flex items-center gap-2'>
+            <label className='text-sm text-gray-500'>Filter by type:</label>
+            <select
+              value={selectedContentType?.id || ''}
+              onChange={(e) => {
+                if (e.target.value === '') {
+                  handleContentTypeChange(null)
+                } else {
+                  const selected = contentTypes.find(
+                    (ct) => ct.id === e.target.value
+                  )
+                  if (selected) {
+                    handleContentTypeChange(selected)
+                  }
+                }
+              }}
+              className='border rounded-md px-2 py-1 h-12 text-sm bg-transparent text-black dark:bg-black dark:text-white '
+            >
+              <option value=''>All Content</option>
+              {contentTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Link
+            href={`/dashboard/create-post${
+              selectedContentType ? `?type=${selectedContentType.id}` : ''
+            }`}
+            className='flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md'
           >
-            <BiPlus /> New Post
-          </Button>
-        </Link>
+            <BiPlus className='w-5 h-5' />
+            Create Post
+          </Link>
+        </div>
       </header>
 
       <div className='hide-scrollbar overflow-x-auto w-full border rounded-md'>
