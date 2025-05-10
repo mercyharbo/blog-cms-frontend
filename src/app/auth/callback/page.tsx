@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 
 function VerificationPageContent() {
@@ -10,17 +10,17 @@ function VerificationPageContent() {
     'loading' | 'success' | 'error'
   >('loading')
   const [errorMessage, setErrorMessage] = useState('')
-  const searchParams = useSearchParams()
+  const params = useParams<{ token: string; type: string }>()
 
-  console.log('Search params:', searchParams.toString())
+  console.log('Search params:', params)
   console.log('verificationStatus:', verificationStatus)
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
         // Get the token from the URL
-        const token = searchParams.get('token')
-        const type = searchParams.get('type')
+        const token = params.token
+        const type = params.type
 
         if (!token) {
           setErrorMessage('Verification token is missing')
@@ -45,7 +45,7 @@ function VerificationPageContent() {
     }
 
     verifyEmail()
-  }, [searchParams])
+  }, [params])
 
   if (verificationStatus === 'loading') {
     return (
