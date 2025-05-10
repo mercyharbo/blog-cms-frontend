@@ -12,6 +12,9 @@ function VerificationPageContent() {
   const [errorMessage, setErrorMessage] = useState('')
   const searchParams = useSearchParams()
 
+  console.log('Search params:', searchParams.toString())
+  console.log('verificationStatus:', verificationStatus)
+
   useEffect(() => {
     const verifyEmail = async () => {
       try {
