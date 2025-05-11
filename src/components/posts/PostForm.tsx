@@ -1,21 +1,9 @@
 'use client'
 
-import {
-  createContent,
-  createContentType,
-  getContentTypes,
-  updateContent,
-} from '@/api/contentReq'
+import { createContent, getContentTypes, updateContent } from '@/api/contentReq'
+import CreateContentTypeDialog from '@/components/content-types/CreateContentTypeDialog'
 import RichTextEditor from '@/components/editor/RichTextEditor'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -34,11 +22,9 @@ import {
   setContentTypes,
   setError,
   setLoading,
-  setPostTypeId,
 } from '@/store/features/contentSlice'
 import { ContentType } from '@/types/content'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Label } from '@radix-ui/react-label'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -46,7 +32,6 @@ import { BiPlus } from 'react-icons/bi'
 import { toast } from 'react-toastify'
 import slugify from 'slugify'
 import * as z from 'zod'
-import { Textarea } from '../ui/textarea'
 
 interface CreatePayload {
   title: string
@@ -124,39 +109,21 @@ export default function PostForm({
 }: PostFormProps) {
   const router = useRouter()
   const [title, setTitle] = useState('')
-  const [isCreatingtype, setIsCreatingType] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
-  const [newTypeTitle, setNewTypeTitle] = useState('')
-  const [newTypeDescription, setNewTypeDescription] = useState('')
-  const { postTypeId: reduxPostTypeId, contentTypes } = useAppSelector(
-    (state) => state.content
-  )
+  const { contentTypes } = useAppSelector((state) => state.content)
   const dispatch = useAppDispatch()
 
-  /**
-   * The function `contentTypeReq` fetches content types, handles errors, and sets post type ID if 'post'
-   * type is found.
-   */
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
 
     try {
       const response = await getContentTypes()
-
       if (response.status === false) {
         dispatch(setError(response.message))
         toast.error(response.message)
       } else if (response.contentTypes) {
         dispatch(setContentTypes(response.contentTypes))
-
-        const postType = response.contentTypes.find(
-          (type: ContentType) => type.name.toLowerCase() === 'post'
-        )
-
-        if (postType) {
-          dispatch(setPostTypeId(postType.id))
-        }
       }
     } catch (error) {
       let errorMsg = 'An error occurred while fetching content types'
@@ -195,7 +162,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
       meta_title: initialData?.data?.meta_title || '',
       meta_keywords: initialData?.data?.meta_keywords || [],
       reading_time: initialData?.data?.reading_time || 0,
-      postType: initialData?.type_id || reduxPostTypeId || '',
+      postType: initialData?.type_id || '',
     },
   })
 
@@ -313,58 +280,6 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
     }
   }
 
-  /**
-   * The function `createContentTypeReq` handles the creation of a content type with error handling and
-   * success notifications.
-   * @returns The `createContentTypeReq` function returns either nothing (undefined) if the
-   * `newTypeTitle` is not provided, or it returns after creating a new content type successfully and
-   * handling any errors that may occur during the process.
-   */ const createContentTypeReq = async () => {
-    if (!newTypeTitle) {
-      toast.error('Title is required')
-      return
-    }
-
-    setIsCreatingType(true)
-
-    try {
-      const payload = {
-        title: newTypeTitle,
-        slug: slugify(newTypeTitle, { lower: true, strict: true }),
-        description: newTypeDescription,
-      }
-
-      const response = await createContentType(payload)
-
-      if (response.status === false) {
-        dispatch(setError(response.message))
-        toast.error(response.message)
-      } else {
-        toast.success('Content type created successfully')
-        setShowDialog(false)
-        setNewTypeTitle('')
-        setNewTypeDescription('')
-
-        // Fetch updated content types
-        const updatedTypesResponse = await getContentTypes()
-        if (updatedTypesResponse.contentTypes) {
-          dispatch(setContentTypes(updatedTypesResponse.contentTypes))
-        }
-      }
-    } catch (error) {
-      let errorMsg = 'An error occurred while creating content type'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
-      dispatch(setError(errorMsg))
-      toast.error(errorMsg)
-    } finally {
-      setIsCreatingType(false)
-    }
-  }
-
   // Add this to check form validity
   const isFormValid = form.formState.isValid
   const isDirty = form.formState.isDirty
@@ -478,7 +393,6 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                 </FormItem>
               )}
             />
-
             {form.watch('status') === 'scheduled' && (
               <FormField
                 control={form.control}
@@ -503,7 +417,6 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                 )}
               />
             )}
-
             <FormField
               control={form.control}
               name='postType'
@@ -515,7 +428,6 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                       <select
                         {...field}
                         className='w-[90%] px-2 h-12 border rounded-md dark:bg-black dark:text-white'
-                        // defaultValue={reduxPostTypeId || ''}
                       >
                         <option value=''>Select a type</option>
                         {contentTypes?.map((type) => (
@@ -539,63 +451,13 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                   <FormMessage />
                 </FormItem>
               )}
+            />{' '}
+            
+            <CreateContentTypeDialog
+              open={showDialog}
+              onOpenChange={setShowDialog}
+              onSuccess={contentTypeReq}
             />
-
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
-              <DialogContent className='flex flex-col gap-5'>
-                <DialogHeader>
-                  <DialogTitle>Create New Content Type</DialogTitle>
-                  <DialogDescription>
-                    Add a new type of content to your CMS
-                  </DialogDescription>
-                </DialogHeader>
-                <div className='flex flex-col gap-5 w-full'>
-                  <div className='flex flex-col gap-2 w-full'>
-                    <Label className='text-sm'>Title</Label>
-                    <Input
-                      placeholder='e.g., Blog Post, News Article, etc.'
-                      value={newTypeTitle}
-                      onChange={(e) => setNewTypeTitle(e.target.value)}
-                    />
-                  </div>
-                  <div className='flex flex-col gap-2 w-full'>
-                    <Label className='text-sm'>Slug</Label>
-                    <Input
-                      value={slugify(newTypeTitle, {
-                        lower: true,
-                        strict: true,
-                      })}
-                      disabled
-                    />
-                    <p className='text-sm'>Auto-generated from title</p>
-                  </div>
-                  <div className='flex flex-col gap-2 w-full'>
-                    <Label className='text-sm'>Description</Label>
-                    <Textarea
-                      placeholder='Describe the purpose of this content type...'
-                      value={newTypeDescription}
-                      onChange={(e) => setNewTypeDescription(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    onClick={() => setShowDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type='button'
-                    disabled={isCreatingtype}
-                    onClick={createContentTypeReq}
-                  >
-                    {isCreatingtype ? 'Creating...' : 'Create'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
           <FormField
             control={form.control}

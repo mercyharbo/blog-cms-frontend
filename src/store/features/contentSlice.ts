@@ -7,7 +7,6 @@ interface ContentState {
   currentPost: Post | null
   loading: boolean
   error: string | null
-  postTypeId: string | null
 }
 
 const initialState: ContentState = {
@@ -16,7 +15,6 @@ const initialState: ContentState = {
   currentPost: null,
   loading: false,
   error: null,
-  postTypeId: null,
 }
 
 const contentSlice = createSlice({
@@ -26,11 +24,6 @@ const contentSlice = createSlice({
     setContentTypes: (state, action: PayloadAction<ContentType[]>) => {
       state.contentTypes = action.payload
     },
-    setPostTypeId: (state, action: PayloadAction<string>) => {
-      state.postTypeId = action.payload
-
-      document.cookie = `postTypeId=${action.payload}; path=/`
-    },
     setPosts: (state, action: PayloadAction<Post[]>) => {
       state.posts = action.payload
     },
@@ -39,6 +32,7 @@ const contentSlice = createSlice({
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload
+      state.loading = false
     },
     setCurrentPost: (state, action: PayloadAction<Post | null>) => {
       state.currentPost = action.payload
@@ -51,7 +45,6 @@ const contentSlice = createSlice({
 
 export const {
   setContentTypes,
-  setPostTypeId,
   setPosts,
   setLoading,
   setError,

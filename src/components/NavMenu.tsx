@@ -20,10 +20,10 @@ import { Button } from './ui/button'
 
 const linksItems = [
   { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
-  { href: '/categories', label: 'Categories', icon: <BiCategory /> },
-  { href: '/authors', label: 'Authors', icon: <FaUsers /> },
+  { href: '/dashboard/categories', label: 'Categories', icon: <BiCategory /> },
+  { href: '/dashboard/authors', label: 'Authors', icon: <FaUsers /> },
   {
-    href: '/content-types',
+    href: '/dashboard/content-types',
     label: 'Content Types',
     icon: <IoDocumentTextOutline />,
   },
@@ -31,16 +31,20 @@ const linksItems = [
 
 const settingsLinks = [
   {
-    href: '/settings',
+    href: '/dashboard/settings',
     label: 'General Settings',
     icon: <IoSettings />,
   },
   {
-    href: '/settings/appearance',
+    href: '/dashboard/settings/appearance',
     label: 'Appearance',
     icon: <IoColorPalette />,
   },
-  { href: '/settings/security', label: 'Security', icon: <IoShieldOutline /> },
+  {
+    href: '/dashboard/settings/security',
+    label: 'Security',
+    icon: <IoShieldOutline />,
+  },
 ]
 
 export default function NavMenu() {

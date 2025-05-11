@@ -24,6 +24,39 @@ export async function getContentTypes() {
   return response
 }
 
+export async function updateContentType(
+  contentTypeId: string,
+  payload: {
+    title: string
+    slug: string
+    description: string
+  }
+) {
+  const cookie_store = new Cookies()
+  const access_token = cookie_store.get('access_token')
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/types/${contentTypeId}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${access_token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  )
+
+  const response = await res.json()
+
+  if (!res.ok) {
+    throw new Error(response.message || 'Failed to update content types')
+  }
+
+  return response
+}
+
 export async function getContent(contentTypeId?: string) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
