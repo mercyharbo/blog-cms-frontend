@@ -23,13 +23,10 @@ import PostForm from './PostForm'
 
 interface SinglePostPageProps {
   postId: string
-  postTypeId: string
+  // postTypeId: string
 }
 
-export default function SinglePostPage({
-  postId,
-  postTypeId,
-}: SinglePostPageProps) {
+export default function SinglePostPage({ postId }: SinglePostPageProps) {
   const dispatch = useAppDispatch()
   const { currentPost, loading } = useAppSelector((state) => state.content)
 
@@ -37,16 +34,15 @@ export default function SinglePostPage({
   const getContentsDetails = useCallback(async () => {
     try {
       dispatch(setLoading(true))
-      const data = await getContentDetails(postTypeId, postId)
+      const response = await getContentDetails(postId)
 
-      if (data.data.error) {
-        dispatch(setError(data.data.error))
-        toast.error(data.data.error)
+      if (response.status === false) {
+        dispatch(setError(response.message || 'Error fetching content'))
+        toast.error(response.message || 'Error fetching content')
         return
-      }
-
-      if (data) {
-        dispatch(setCurrentPost(data.data.content))
+      } else if (response.status === true) {
+        dispatch(setCurrentPost(response.content))
+        console.log('Fetched Post:', response.content)
       }
     } catch (error) {
       const errorMessage =
@@ -56,7 +52,7 @@ export default function SinglePostPage({
     } finally {
       dispatch(setLoading(false))
     }
-  }, [dispatch, postId, postTypeId]) // Dependencies for useCallback
+  }, [dispatch, postId])
 
   // Move editor initialization after data fetching
   const editor = useEditor({
@@ -82,17 +78,17 @@ export default function SinglePostPage({
       }),
     ],
     editable: false,
-    content: currentPost?.data?.content || '', // Initialize with content if available
+    content: currentPost?.data.content || '', // Initialize with content if available
   })
 
   // Fetch post details on mount
   useEffect(() => {
     getContentsDetails()
-  }, [postId, postTypeId, getContentsDetails]) // Added getContentsDetails to dependencies
+  }, [postId, getContentsDetails])
 
   // Update editor content when post changes
   useEffect(() => {
-    if (currentPost?.data?.content && editor) {
+    if (currentPost?.data.content && editor) {
       const processContent = (content: string) => {
         return (
           content
@@ -115,7 +111,7 @@ export default function SinglePostPage({
             .replace(/`([^`]+)`/g, '<code>$1</code>')
             // Handle images
             .replace(
-              /!\[.*?\]\((data:image\/[^;]+;base64,[^)]+)\)/g,
+              /!\[(.*?)\]\((data:image\/[^;]+;base64,[^)]+)\)/g,
               '<img src="$1" />'
             )
             // Handle lists
@@ -134,26 +130,18 @@ export default function SinglePostPage({
       }
 
       const processedContent = processContent(currentPost.data.content)
-
       editor.commands.setContent(processedContent)
     }
-  }, [currentPost?.data?.content, editor])
+  }, [currentPost?.data.content, editor])
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const handleEditClick = () => setIsEditModalOpen(true)
 
-  // Add handler for edit button
-  const handleEditClick = () => {
-    setIsEditModalOpen(true)
-  }
-
-  // Loading state
   if (loading && !currentPost) {
-    // Only show loading on initial load
     return <PageLoadingSpinner />
   }
 
-  // Error state
-  if (!currentPost?.data) {
+  if (!currentPost) {
     return (
       <div className='flex items-center justify-center h-screen'>
         <p className='text-muted-foreground'>Post not found</p>
@@ -162,17 +150,18 @@ export default function SinglePostPage({
   }
 
   return (
-    <main className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
+    <main className='max-w-6xl mx-auto px-4 flex flex-col gap-8 sm:px-6 lg:px-8'>
       <BreadcrumbNav />
 
-      <header className='py-6 space-y-4'>
+      <div className='flex flex-col space-y-8'>
         <div className='flex items-center justify-between gap-4'>
           <h1 className='text-4xl font-bold tracking-tight text-foreground'>
-            {currentPost?.data?.title}
+            {currentPost.data.title}
           </h1>
+
           <Button
             variant='default'
-            size='sm'
+            size='lg'
             className='gap-2'
             onClick={handleEditClick}
           >
@@ -181,108 +170,106 @@ export default function SinglePostPage({
           </Button>
         </div>
 
-        <div className='flex flex-wrap items-center gap-4 text-sm text-muted-foreground'>
-          <div className='flex items-center gap-2'>
-            <FiUser className='h-4 w-4' />
-            <span>{currentPost?.data?.author}</span>
-          </div>{' '}
-          <div className='flex items-center gap-2'>
-            <FiCalendar className='h-4 w-4' />{' '}
-            <time>
-              {currentPost?.status === 'scheduled' &&
-              currentPost?.scheduled_at ? (
-                <>
-                  Scheduled for{' '}
-                  {new Date(currentPost.scheduled_at).toLocaleDateString(
-                    'en-US',
-                    {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: 'numeric',
-                    }
-                  )}
-                </>
-              ) : (
-                <>
-                  Created on{' '}
-                  {new Date(currentPost?.created_at).toLocaleDateString(
-                    'en-US',
-                    {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    }
-                  )}
-                </>
-              )}
-            </time>
-          </div>{' '}
+        <div className='flex items-center gap-4'>
+          <div className='flex flex-wrap items-center gap-4 text-sm text-muted-foreground'>
+            <div className='flex items-center gap-2'>
+              <FiUser className='h-4 w-4' />
+              <span>{currentPost.data.author}</span>
+            </div>
+
+            <div className='flex items-center gap-2'>
+              <FiCalendar className='h-4 w-4' />
+              <span>
+                Created on{' '}
+                {new Date(currentPost.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+          </div>
+
           <Badge
             variant={
-              currentPost?.status === 'published'
+              currentPost.status === 'published'
                 ? 'default'
-                : currentPost?.status === 'scheduled'
+                : currentPost.status === 'scheduled'
                 ? 'destructive'
                 : 'secondary'
             }
             className='capitalize'
           >
-            {currentPost?.status === 'scheduled'
+            {currentPost.status === 'scheduled'
               ? '🕒 Scheduled'
-              : currentPost?.status}
+              : currentPost.status}
           </Badge>
-          <div className='flex flex-wrap gap-2'>
-            {currentPost?.data?.tags.map((tag) => (
-              <Badge key={tag} variant='outline' className='capitalize'>
-                {tag}
-              </Badge>
-            ))}
-          </div>
         </div>
-      </header>
 
-      <div className='post-cover-image'>
-        {currentPost?.data?.cover_image && (
-          <Image
-            src={currentPost.data.cover_image.url}
-            alt={currentPost.data.cover_image.alt}
-            width={1200}
-            height={630}
-            className='rounded-lg w-full'
-            priority
-          />
-        )}
+        <div className='flex flex-wrap gap-2'>
+          {currentPost.data.tags?.map((tag) => (
+            <Badge key={tag} variant='outline' className='capitalize'>
+              {tag}
+            </Badge>
+          ))}
+        </div>
+
+        {currentPost.status === 'scheduled' && currentPost.scheduled_at ? (
+          <div className='flex items-center gap-2'>
+            <FiCalendar className='h-4 w-4' />
+            <span>
+              Scheduled for{' '}
+              {new Date(currentPost.scheduled_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+              })}
+            </span>
+          </div>
+        ) : null}
+
+        <div className='post-cover-image'>
+          {currentPost.data.cover_image && (
+            <Image
+              src={currentPost.data.cover_image.url}
+              alt={currentPost.data.cover_image.alt}
+              width={1200}
+              height={500}
+              className='h-[400px] object-cover rounded-lg w-full'
+              priority
+            />
+          )}
+        </div>
+
+        <article
+          className='prose prose-lg max-w-none 
+          prose-headings:text-foreground 
+          prose-p:text-muted-foreground 
+          prose-blockquote:border-primary 
+          prose-strong:text-primary
+          prose-img:rounded-lg
+          prose-pre:bg-muted
+          prose-pre:p-4
+          prose-pre:rounded-lg
+        '
+        >
+          <EditorContent editor={editor} className='min-h-[200px]' />
+        </article>
       </div>
-
-      <article
-        className='prose prose-lg max-w-none 
-        prose-headings:text-foreground 
-        prose-p:text-muted-foreground 
-        prose-blockquote:border-primary 
-        prose-strong:text-primary
-        prose-img:rounded-lg
-        prose-pre:bg-muted
-        prose-pre:p-4
-        prose-pre:rounded-lg
-      '
-      >
-        <EditorContent editor={editor} className='min-h-[200px]' />
-      </article>
 
       <SlideOutModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title={`Edit: ${currentPost?.data?.title}`}
+        title={`Edit: ${currentPost.data.title}`}
       >
         <PostForm
-          initialData={currentPost} // Changed from currentPost?.data to currentPost
-          contentTypeId={postTypeId}
+          initialData={currentPost}
           isEditing={true}
           onSuccess={() => {
             setIsEditModalOpen(false)
-            getContentsDetails() // Refresh the post data
+            getContentsDetails()
           }}
         />
       </SlideOutModal>

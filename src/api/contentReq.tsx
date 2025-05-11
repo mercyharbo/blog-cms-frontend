@@ -1,3 +1,4 @@
+import { ContentResponse } from '@/types/content'
 import Cookies from 'universal-cookie'
 
 export async function getContentTypes() {
@@ -15,22 +16,20 @@ export async function getContentTypes() {
     },
   })
 
-  const data = await res.json()
+  const response = await res.json()
 
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to fetch content types')
+    throw new Error(response.message || 'Failed to fetch content types')
   }
 
-  return { data }
+  return response
 }
 
 export async function getContent(contentTypeId?: string) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
-
-  const url = contentTypeId
-    ? `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}`
-    : `${process.env.NEXT_PUBLIC_API_URL}/api/content/all`
+  const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/content`
+  const url = contentTypeId ? `${baseUrl}/${contentTypeId}` : baseUrl
 
   const res = await fetch(url, {
     method: 'GET',
@@ -41,21 +40,22 @@ export async function getContent(contentTypeId?: string) {
     },
   })
 
-  const data = await res.json()
+  const response = await res.json()
+  console.log('Content API Response:', response)
 
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to fetch content')
+    throw new Error(response.message || 'Failed to fetch content')
   }
 
-  return { data }
+  return response
 }
 
-export async function getContentDetails(contentTypeId: string, postId: string) {
+export async function getContentDetails(postId: string) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}/${postId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`,
     {
       method: 'GET',
       headers: {
@@ -65,14 +65,43 @@ export async function getContentDetails(contentTypeId: string, postId: string) {
       },
     }
   )
+  const apiResponse: ContentResponse = await res.json()
+
+  if (!res.ok) {
+    throw new Error(apiResponse.message || 'Failed to fetch content details')
+  }
+
+  return apiResponse
+}
+
+export async function createContentType(payload: {
+  title: string
+  slug: string
+  description: string
+}) {
+  const cookie_store = new Cookies()
+  const access_token = cookie_store.get('access_token')
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/types`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${access_token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  )
 
   const data = await res.json()
 
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to fetch content details')
+    throw new Error(data.message)
   }
 
-  return { data }
+  return data
 }
 
 interface ImageType {
@@ -81,26 +110,26 @@ interface ImageType {
 }
 
 export async function createContent(
-  contentTypeId: string | undefined,
+  contentTypeId: string,
   postData: {
     title: string
     slug: string
     author: string
     content: string
-    status: 'draft' | 'published' | 'scheduled'
-    scheduled_at?: string | null
     cover_image: ImageType
+    reading_time: number
     tags: string[]
     meta_title: string
     meta_keywords: string[]
-    reading_time: number
+    status?: 'draft' | 'published' | 'scheduled'
+    scheduled_at?: string | null
   }
 ) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/types/${contentTypeId}`,
     {
       method: 'POST',
       headers: {
@@ -113,7 +142,7 @@ export async function createContent(
   )
 
   const data = await res.json()
-  console.log('createContent', data)
+
   if (!res.ok) {
     throw new Error(data.message)
   }
@@ -122,8 +151,7 @@ export async function createContent(
 }
 
 export async function updateContent(
-  contentTypeId: string,
-  slug: string,
+  id: string,
   postData: {
     title: string
     slug: string
@@ -142,7 +170,7 @@ export async function updateContent(
   const access_token = cookie_store.get('access_token')
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}/${slug}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${id}`,
     {
       method: 'PUT',
       headers: {
@@ -157,36 +185,32 @@ export async function updateContent(
   const data = await res.json()
 
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to update content')
+    throw new Error(data.message || 'Failed to update content')
   }
 
   return { data }
 }
 
-export async function deleteContent(
-  contentTypeId: string | undefined,
-  postId: string
-) {
+export async function deleteContent(postId: string) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
 
-  const url = contentTypeId
-    ? `${process.env.NEXT_PUBLIC_API_URL}/api/content/${contentTypeId}/${postId}`
-    : `${process.env.NEXT_PUBLIC_API_URL}/api/content/all/${postId}`
-
-  const res = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${access_token}`,
-    },
-  })
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/types/${postId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${access_token}`,
+      },
+    }
+  )
 
   const data = await res.json()
 
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to delete content')
+    throw new Error(data.message || 'Failed to delete content')
   }
 
   return { data }

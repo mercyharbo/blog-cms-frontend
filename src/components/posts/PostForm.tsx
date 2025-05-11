@@ -1,8 +1,21 @@
 'use client'
 
-import { createContent, getContentTypes, updateContent } from '@/api/contentReq'
+import {
+  createContent,
+  createContentType,
+  getContentTypes,
+  updateContent,
+} from '@/api/contentReq'
 import RichTextEditor from '@/components/editor/RichTextEditor'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -25,12 +38,35 @@ import {
 } from '@/store/features/contentSlice'
 import { ContentType } from '@/types/content'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Label } from '@radix-ui/react-label'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { BiPlus } from 'react-icons/bi'
 import { toast } from 'react-toastify'
 import slugify from 'slugify'
 import * as z from 'zod'
+import { Textarea } from '../ui/textarea'
+
+interface CreatePayload {
+  title: string
+  slug: string
+  content: string
+  author: string
+  cover_image: {
+    url: string
+    alt: string
+  }
+  status: 'draft' | 'published' | 'scheduled'
+  type_id: string
+  reading_time: number
+  tags: string[]
+  meta_title: string
+  meta_keywords: string[]
+  scheduled_at?: string | null
+}
+
+type PostPayload = CreatePayload & { type_id: string }
 
 // Update the form schema first
 const postSchema = z.object({
@@ -40,6 +76,7 @@ const postSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   status: z.enum(['draft', 'published', 'scheduled']),
   scheduled_at: z.string().nullable().optional(),
+  postType: z.string().min(1, 'Post type is required'),
   cover_image: z.object({
     alt: z.string(),
     url: z.string().url(),
@@ -56,9 +93,13 @@ type CreatePostData = z.infer<typeof postSchema>
 interface PostFormProps {
   initialData?: {
     id: string
-    content_type_id: string
+    type_id: string
+    user_id: string
+    created_at: string
+    updated_at: string
+    published_at: string | null
+    scheduled_at: string | null
     status: 'draft' | 'published' | 'scheduled'
-    scheduled_at?: string | null
     data: {
       title: string
       slug: string
@@ -70,23 +111,24 @@ interface PostFormProps {
       meta_keywords: string[]
       reading_time: number
     }
+    content_type?: ContentType
   }
-  contentTypeId?: string // Changed from postTypeId to contentTypeId
   isEditing?: boolean
   onSuccess?: () => void
 }
 
 export default function PostForm({
   initialData,
-  contentTypeId, // Changed prop name
   isEditing = false,
   onSuccess,
 }: PostFormProps) {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const { postTypeId: reduxPostTypeId } = useAppSelector(
+  const [showDialog, setShowDialog] = useState(false)
+  const [newTypeTitle, setNewTypeTitle] = useState('')
+  const [newTypeDescription, setNewTypeDescription] = useState('')
+  const { postTypeId: reduxPostTypeId, contentTypes } = useAppSelector(
     (state) => state.content
   )
   const dispatch = useAppDispatch()
@@ -142,6 +184,7 @@ export default function PostForm({
       meta_title: initialData?.data?.meta_title || '',
       meta_keywords: initialData?.data?.meta_keywords || [],
       reading_time: initialData?.data?.reading_time || 0,
+      postType: initialData?.type_id || reduxPostTypeId || '',
     },
   })
 
@@ -152,16 +195,11 @@ export default function PostForm({
     form.setValue('title', newTitle)
     form.setValue('slug', slug)
   }
+
   const handleSubmit = async (formData: CreatePostData) => {
     try {
       setIsSubmitting(true)
 
-      const activePostTypeId = isEditing ? contentTypeId : reduxPostTypeId
-
-      if (!activePostTypeId) {
-        toast.error('Post type not found')
-        return
-      }
       if (formData.status === 'scheduled') {
         if (!formData.scheduled_at) {
           toast.error('Schedule date and time is required for scheduled posts')
@@ -177,18 +215,28 @@ export default function PostForm({
         // Convert to UTC ISO string for backend
         formData.scheduled_at = scheduledDate.toISOString()
       }
-      const payload = {
+
+      // Restructure the payload to match the API's expected format
+      const payload: PostPayload = {
         title: formData.title,
         slug: formData.slug,
+        content: formData.content.replace(/\n/g, ''), // Remove extra newlines
         author: formData.author,
-        content: formData.content,
+        cover_image: {
+          url: formData.cover_image.url,
+          alt: formData.cover_image.alt || formData.title, // Use title as fallback for alt
+        },
         status: formData.status,
-        scheduled_at: formData.scheduled_at,
-        cover_image: formData.cover_image,
+        type_id: formData.postType,
+        reading_time: formData.reading_time,
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         meta_title: formData.meta_title,
-        meta_keywords: formData.meta_keywords,
-        reading_time: formData.reading_time,
+        meta_keywords: Array.isArray(formData.meta_keywords)
+          ? formData.meta_keywords
+          : [],
+        ...(formData.scheduled_at
+          ? { scheduled_at: formData.scheduled_at }
+          : {}),
       }
 
       if (isEditing) {
@@ -197,21 +245,34 @@ export default function PostForm({
           return
         }
 
-        const data = await updateContent(
-          activePostTypeId,
-          initialData.id,
-          payload
-        )
-        if (data.data.message) {
+        const data = await updateContent(initialData.id, payload)
+        console.log('data', data)
+        if (data.data.status === false) {
           toast.error(data.data.message)
           return
+        } else if (data.data.status === true) {
+          toast.success('Post updated successfully')
+          setTimeout(() => {
+            window.location.reload()
+          }, 5000)
         }
-        toast.success('Post updated successfully')
-        setTimeout(() => {
-          window.location.reload()
-        }, 5000)
       } else {
-        const data = await createContent(activePostTypeId, payload)
+        // Format payload according to API requirements
+        const contentPayload = {
+          title: payload.title,
+          slug: payload.slug,
+          content: payload.content,
+          author: payload.author,
+          cover_image: payload.cover_image,
+          reading_time: payload.reading_time,
+          tags: payload.tags,
+          meta_title: payload.meta_title,
+          meta_keywords: payload.meta_keywords,
+          status: payload.status,
+          ...(payload.scheduled_at && { scheduled_at: payload.scheduled_at }),
+        }
+
+        const data = await createContent(payload.type_id, contentPayload)
 
         if (data.data.error) {
           toast.error(data.data.error)
@@ -229,6 +290,63 @@ export default function PostForm({
       toast.error(isEditing ? 'Failed to update post' : 'Failed to create post')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  /**
+   * The function `createContentTypeReq` handles the creation of a content type with error handling and
+   * success notifications.
+   * @returns The `createContentTypeReq` function returns either nothing (undefined) if the
+   * `newTypeTitle` is not provided, or it returns after creating a new content type successfully and
+   * handling any errors that may occur during the process.
+   */
+  const createContentTypeReq = async () => {
+    if (!newTypeTitle) {
+      toast.error('Title is required')
+      return
+    }
+
+    dispatch(setLoading(true))
+
+    try {
+      const payload = {
+        title: newTypeTitle,
+        slug: slugify(newTypeTitle, { lower: true, strict: true }),
+        description: newTypeDescription,
+      }
+
+      const data = await createContentType(payload)
+      console.log('data', data)
+
+      // if (data?.data?.error) {
+      //   dispatch(setError(data.data.error))
+      //   toast.error(data.data.error)
+      // } else {
+      //   toast.success('Content type created successfully')
+      //   setShowDialog(false)
+      //   setNewTypeTitle('')
+      //   setNewTypeDescription('')
+      //   // Refresh content types list
+      //   await contentTypeReq()
+      // }
+
+      toast.success('Content type created successfully')
+      setShowDialog(false)
+      setNewTypeTitle('')
+      setNewTypeDescription('')
+      // Refresh content types list
+      await contentTypeReq()
+    } catch (error) {
+      let errorMsg = 'An error occurred while creating content type'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+      dispatch(setError(errorMsg))
+      toast.error(errorMsg)
+    } finally {
+      dispatch(setLoading(false))
     }
   }
 
@@ -317,7 +435,7 @@ export default function PostForm({
                 <FormMessage />
               </FormItem>
             )}
-          />{' '}
+          />
           <div className='space-y-4'>
             <FormField
               control={form.control}
@@ -345,6 +463,96 @@ export default function PostForm({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name='postType'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Post Type</FormLabel>{' '}
+                  <FormControl>
+                    <div className='flex items-center gap-5 w-full'>
+                      <select
+                        {...field}
+                        className='w-[90%] px-2 h-12 border rounded-md dark:bg-black dark:text-white'
+                        defaultValue={reduxPostTypeId || ''}
+                      >
+                        <option value=''>Select a type</option>
+                        {contentTypes?.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <Button
+                        size={'sm'}
+                        variant={'outline'}
+                        onClick={() => setShowDialog(true)}
+                        type='button'
+                        className='h-12 w-[10%] flex items-center justify-center'
+                      >
+                        <BiPlus />
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Content Type</DialogTitle>
+                  <DialogDescription>
+                    Add a new type of content to your CMS
+                  </DialogDescription>
+                </DialogHeader>
+                <div className='flex flex-col gap-5 w-full'>
+                  <div className='flex flex-col gap-3 w-full'>
+                    <Label>Title</Label>
+                    <Input
+                      placeholder='e.g., Blog Post, News Article, etc.'
+                      value={newTypeTitle}
+                      onChange={(e) => setNewTypeTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className='flex flex-col gap-3 w-full'>
+                    <Label>Slug</Label>
+                    <Input
+                      value={slugify(newTypeTitle, {
+                        lower: true,
+                        strict: true,
+                      })}
+                      disabled
+                    />
+                    <p className='text-sm text-accent-foreground'>
+                      Auto-generated from title
+                    </p>
+                  </div>
+                  <div className='flex flex-col gap-3 w-full'>
+                    <Label>Description</Label>
+                    <Textarea
+                      placeholder='Describe the purpose of this content type...'
+                      value={newTypeDescription}
+                      onChange={(e) => setNewTypeDescription(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    onClick={() => setShowDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type='button' onClick={createContentTypeReq}>
+                    Create
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {form.watch('status') === 'scheduled' && (
               <FormField

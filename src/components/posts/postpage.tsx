@@ -34,13 +34,13 @@ import {
   TableRow,
 } from '../ui/table'
 
-interface TextNode {
-  text: string
-}
+// interface TextNode {
+//   text: string
+// }
 
-interface ContentBlock {
-  children?: TextNode[]
-}
+// interface ContentBlock {
+//   children?: TextNode[]
+// }
 
 export default function PostListPage() {
   const dispatch = useAppDispatch()
@@ -54,18 +54,22 @@ export default function PostListPage() {
     title: string
     postTypeId: string
   } | null>(null)
-
   const getPostContents = useCallback(
     async (contentTypeId?: string) => {
       try {
-        const data = await getContent(contentTypeId)
+        const response = await getContent(contentTypeId)
 
-        if (data.data.error) {
-          dispatch(setError(data.data.error))
-          toast.error(data.data.error)
-        } else if (data) {
-          dispatch(setPosts(data.data.contents))
+        if (response?.status === false) {
+          dispatch(setError(response.data.message))
+          toast.error(response.data.message)
+          return
+        } else if (response?.status === true) {
+          dispatch(setPosts(response.contents))
         }
+
+        // if (response?.data?.contents) {
+        //   dispatch(setPosts(response.data.contents))
+        // }
       } catch (error) {
         let errorMsg = 'An error occurred while fetching content'
         if (error instanceof Error) {
@@ -79,18 +83,21 @@ export default function PostListPage() {
     },
     [dispatch]
   )
-
   const contentTypeReq = useCallback(async () => {
     dispatch(setLoading(true))
 
     try {
-      const data = await getContentTypes()
+      const response = await getContentTypes()
+      console.log('Content Types Response:', response)
 
-      if (data?.data?.error) {
-        dispatch(setError(data.data.error))
-        toast.error(data.data.error)
-      } else if (data?.data?.contentTypes) {
-        dispatch(setContentTypes(data.data.contentTypes))
+      // if (response?.data?.status === false) {
+      //   dispatch(setError(response.data.message))
+      //   toast.error(response.data.message)
+      // }
+
+      if (response?.contentTypes) {
+        dispatch(setContentTypes(response.contentTypes))
+        // After setting content types, fetch all posts
         await getPostContents()
       }
     } catch (error) {
@@ -119,33 +126,28 @@ export default function PostListPage() {
     },
     [dispatch, getPostContents]
   )
-  const handleDeleteModal = useCallback(
-    (post: Post) => {
-      // Find the content type ID that matches the post's content type name
-      const contentType = contentTypes.find(
-        (type) => type.name === post.content_types.name
-      )
 
-      setPostToDelete({
-        id: post.id,
-        title: post.data.title,
-        postTypeId: contentType?.id ?? '',
-      })
-    },
-    [contentTypes]
-  )
+  const handleDeleteModal = useCallback((post: Post) => {
+    setPostToDelete({
+      id: post.id,
+      title: post.data.title,
+      postTypeId: post.type_id,
+    })
+  }, [])
 
   const deleteContentFunc = useCallback(
-    async (contentTypeId: string | undefined, postId: string) => {
+    async (postId: string) => {
       try {
         dispatch(setLoading(true))
-        const data = await deleteContent(contentTypeId, postId)
+        const response = await deleteContent(postId)
 
-        if (data.data.error) {
-          dispatch(setError(data.data.error))
-          toast.error(data.data.error)
-        } else if (data) {
-          toast.success(data.data.message)
+        if (response.data.status === false) {
+          toast.error(response.data.message || 'Failed to delete post')
+          return
+        } else if (response.data.status === true) {
+          toast.success('Post deleted successfully')
+          await getPostContents(selectedContentType?.id)
+          setPostToDelete(null)
         }
       } catch (error) {
         let errorMsg = 'An error occurred while deleting content'
@@ -160,56 +162,12 @@ export default function PostListPage() {
         dispatch(setLoading(false))
       }
     },
-    [dispatch]
+    [dispatch, getPostContents, selectedContentType?.id]
   )
-
-  const handleConfirmDelete = useCallback(async () => {
-    if (postToDelete) {
-      try {
-        await deleteContentFunc(postToDelete.postTypeId, postToDelete.id)
-        setPostToDelete(null)
-        setTimeout(() => {
-          window.location.reload()
-        }, 5000)
-      } catch (error) {
-        console.error('Error deleting post:', error)
-      }
-    }
-  }, [postToDelete, deleteContentFunc])
-
-  /**
-   * The function `getContentPreview` takes a post object as input and returns a preview of its content
-   * by stripping HTML tags and limiting the length to 100 characters.
-   * @param {Post} post - The `post` parameter in the `getContentPreview` function is expected to be an
-   * object of type `Post`. It is used to extract the content data from the post in order to generate a
-   * preview. If the post object or its content data is missing or empty, the function will return 'No
-   * @returns The `getContentPreview` function returns a preview of the content from a post. If the post
-   * data does not contain any content, it returns 'No content available'. If there is content available,
-   * it strips HTML tags and gets the plain text. If the plain text is longer than 100 characters, it
-   * returns the first 100 characters followed by '...'. Otherwise, it returns the entire plain text
-   */
-  const getContentPreview = (post: Post): string => {
-    if (!post?.data?.content) return 'No content available'
-
-    // Strip HTML tags and get plain text
-    const content = post.data.content
-
-    const plainText: string =
-      typeof content === 'string'
-        ? content.replace(/<[^>]*>/g, '')
-        : (content as ContentBlock[])
-            .map((block) =>
-              block.children?.map((child) => child.text).join(' ')
-            )
-            .join(' ')
-    return plainText.length > 100
-      ? `${plainText.substring(0, 100)}...`
-      : plainText
-  }
 
   useEffect(() => {
     contentTypeReq()
-  }, [contentTypeReq])
+  }, [contentTypeReq, dispatch])
 
   if (loading) {
     return <PageLoadingSpinner />
@@ -253,86 +211,65 @@ export default function PostListPage() {
             href={`/dashboard/create-post${
               selectedContentType ? `?type=${selectedContentType.id}` : ''
             }`}
-            className='w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2.5 rounded-md transition-colors'
+            className='w-full lg:w-auto md:w-auto'
           >
-            <BiPlus className='w-5 h-5' />
-            Create Post
+            <Button
+              variant='default'
+              size='lg'
+              className='w-full lg:w-auto md:w-auto gap-2'
+            >
+              <BiPlus className='h-4 w-4' />
+              New Post
+            </Button>
           </Link>
         </div>
-      </header>{' '}
-      <div className='hide-scrollbar overflow-x-auto w-full border rounded-md bg-white dark:bg-black'>
+      </header>
+
+      <div className='rounded-xl border bg-card w-full overflow-auto'>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-full sm:w-[40%] min-w-[200px]'>
-                Title
-              </TableHead>
-              <TableHead className='hidden sm:table-cell w-[20%]'>
-                Author
-              </TableHead>
-              <TableHead className='hidden md:table-cell w-[20%]'>
-                Last Updated
-              </TableHead>
-              <TableHead className='w-[120px] sm:w-[20%] text-right'>
-                Actions
-              </TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Author</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {posts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className='h-24 text-center'>
-                  No posts found
-                </TableCell>
-              </TableRow>
-            ) : (
+            {posts.length > 0 ? (
               posts.map((post) => (
                 <TableRow key={post.id}>
                   {' '}
+                  <TableCell className='font-medium max-w-[200px] truncate'>
+                    {post.data.title}
+                  </TableCell>
+                  <TableCell>{post.data.author}</TableCell>
+                  <TableCell className='capitalize'>
+                    {contentTypes.find((type) => type.id === post.type_id)
+                      ?.name || post.type_id}
+                  </TableCell>
+                  <TableCell className='capitalize'>{post.status}</TableCell>
                   <TableCell>
-                    <div className='flex flex-col gap-1 min-w-[200px]'>
-                      <div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3'>
-                        <span className='font-medium truncate'>
-                          {post.data.title}
-                        </span>
-                        <span className='text-xs text-muted-foreground sm:hidden'>
-                          by {post.data.author || 'John Doe'} •{' '}
-                          {format(new Date(post.updated_at), 'MMM dd, yyyy')}
-                        </span>
-                      </div>
-                      <span className='text-sm text-muted-foreground truncate'>
-                        {getContentPreview(post)}
-                      </span>
-                    </div>
+                    {format(new Date(post.created_at), 'dd MMMM yyyy')}
                   </TableCell>
-                  <TableCell className='hidden sm:table-cell'>
-                    <span className='truncate'>
-                      {post.data.author || 'John Doe'}
-                    </span>
-                  </TableCell>
-                  <TableCell className='hidden md:table-cell'>
-                    <span className='truncate'>
-                      {format(new Date(post.updated_at), 'MMM dd, yyyy')}
-                    </span>
-                  </TableCell>
-                  <TableCell className='text-right'>
-                    <div className='flex items-center justify-end gap-2'>
+                  <TableCell>
+                    <div className='flex items-center gap-4'>
                       <Link href={`/dashboard/${post.id}`}>
                         <Button
-                          type='button'
-                          variant='outline'
+                          variant='ghost'
                           size='sm'
-                          className='h-9 w-9 p-0'
+                          className='text-muted-foreground hover:text-foreground'
                         >
                           <FiEdit2 className='h-4 w-4' />
                         </Button>
                       </Link>
                       <Button
-                        type='button'
-                        variant='destructive'
+                        variant='ghost'
                         size='sm'
-                        className='h-9 w-9 p-0'
                         onClick={() => handleDeleteModal(post)}
+                        className='text-muted-foreground hover:text-destructive focus:text-destructive'
                       >
                         <FiTrash2 className='h-4 w-4' />
                       </Button>
@@ -340,33 +277,52 @@ export default function PostListPage() {
                   </TableCell>
                 </TableRow>
               ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className='text-center'>
+                  No posts found
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <Dialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
-        <DialogContent className='sm:max-w-[425px]'>
+
+      <Dialog
+        open={!!postToDelete}
+        onOpenChange={(isOpen) => !isOpen && setPostToDelete(null)}
+      >
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Post</DialogTitle>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{postToDelete?.title}
-              &rdquo;? This action cannot be undone.
+              This will permanently delete the post &quot;
+              {postToDelete?.title}&quot;.
+              <br />
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className='flex items-center gap-2'>
+          <DialogFooter>
             <Button
-              type='button'
               variant='outline'
               onClick={() => setPostToDelete(null)}
+              className='w-full sm:w-auto'
             >
               Cancel
             </Button>
             <Button
-              type='button'
               variant='destructive'
-              onClick={() => handleConfirmDelete()}
+              onClick={() => postToDelete && deleteContentFunc(postToDelete.id)}
+              className='w-full sm:w-auto'
             >
-              Delete
+              {loading ? (
+                <span className='flex items-center gap-2'>
+                  <span className='h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin'></span>
+                  Deleting...
+                </span>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
