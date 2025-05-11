@@ -1,4 +1,3 @@
-import { ContentResponse } from '@/types/content'
 import Cookies from 'universal-cookie'
 
 export async function getContentTypes() {
@@ -41,7 +40,6 @@ export async function getContent(contentTypeId?: string) {
   })
 
   const response = await res.json()
-  console.log('Content API Response:', response)
 
   if (!res.ok) {
     throw new Error(response.message || 'Failed to fetch content')
@@ -51,27 +49,43 @@ export async function getContent(contentTypeId?: string) {
 }
 
 export async function getContentDetails(postId: string) {
-  const cookie_store = new Cookies()
-  const access_token = cookie_store.get('access_token')
+  try {
+    const cookie_store = new Cookies()
+    const access_token = cookie_store.get('access_token')
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${access_token}`,
-      },
+    if (!access_token) {
+      return { status: false, message: 'Authentication required' }
     }
-  )
-  const apiResponse: ContentResponse = await res.json()
 
-  if (!res.ok) {
-    throw new Error(apiResponse.message || 'Failed to fetch content details')
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    )
+
+    const apiResponse = await res.json()
+
+    if (!res.ok) {
+      return {
+        status: false,
+        message: apiResponse.message || 'Failed to fetch content details',
+      }
+    }
+
+    return apiResponse
+  } catch (error) {
+    console.error('Error in getContentDetails:', error)
+    return {
+      status: false,
+      message: error instanceof Error ? error.message : 'An error occurred',
+    }
   }
-
-  return apiResponse
 }
 
 export async function createContentType(payload: {

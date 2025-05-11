@@ -124,6 +124,7 @@ export default function PostForm({
 }: PostFormProps) {
   const router = useRouter()
   const [title, setTitle] = useState('')
+  const [isCreatingtype, setIsCreatingType] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const [newTypeTitle, setNewTypeTitle] = useState('')
@@ -133,20 +134,24 @@ export default function PostForm({
   )
   const dispatch = useAppDispatch()
 
+  /**
+   * The function `contentTypeReq` fetches content types, handles errors, and sets post type ID if 'post'
+   * type is found.
+   */
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
 
     try {
-      const data = await getContentTypes()
+      const response = await getContentTypes()
 
-      if (data?.data?.error) {
-        dispatch(setError(data.data.error))
-        toast.error(data.data.error)
-      } else if (data?.data?.contentTypes) {
-        dispatch(setContentTypes(data.data.contentTypes))
+      if (response.status === false) {
+        dispatch(setError(response.message))
+        toast.error(response.message)
+      } else if (response.contentTypes) {
+        dispatch(setContentTypes(response.contentTypes))
 
-        const postType: ContentType | undefined = data.data.contentTypes.find(
-          (type: ContentType) => type.name === 'post'
+        const postType = response.contentTypes.find(
+          (type: ContentType) => type.name.toLowerCase() === 'post'
         )
 
         if (postType) {
@@ -170,6 +175,12 @@ export default function PostForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch])
 
+  /* The above code snippet is using the useForm hook from a form library in a TypeScript React
+application. It is initializing a form for creating a post with default values provided. The form is
+configured with a resolver using Zod schema validation for the post data fields. The default values
+for the form fields are set based on the initialData object, with fallback values if the properties
+are not present. The form includes fields such as title, slug, author, content, status,
+scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and postType. */
   const form = useForm<CreatePostData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
@@ -196,6 +207,15 @@ export default function PostForm({
     form.setValue('slug', slug)
   }
 
+  /**
+   * The function `handleSubmit` handles the submission of form data for creating or updating a post,
+   * including validation and API calls.
+   * @param {CreatePostData} formData - The `formData` parameter in the `handleSubmit` function contains
+   * data for creating or updating a post. It includes the following properties:
+   * @returns In the `handleSubmit` function, various conditions are checked and different actions are
+   * taken based on the form data and whether it is in editing mode or not. Here is what is being
+   * returned based on different scenarios:
+   */
   const handleSubmit = async (formData: CreatePostData) => {
     try {
       setIsSubmitting(true)
@@ -299,14 +319,13 @@ export default function PostForm({
    * @returns The `createContentTypeReq` function returns either nothing (undefined) if the
    * `newTypeTitle` is not provided, or it returns after creating a new content type successfully and
    * handling any errors that may occur during the process.
-   */
-  const createContentTypeReq = async () => {
+   */ const createContentTypeReq = async () => {
     if (!newTypeTitle) {
       toast.error('Title is required')
       return
     }
 
-    dispatch(setLoading(true))
+    setIsCreatingType(true)
 
     try {
       const payload = {
@@ -315,27 +334,23 @@ export default function PostForm({
         description: newTypeDescription,
       }
 
-      const data = await createContentType(payload)
-      console.log('data', data)
+      const response = await createContentType(payload)
 
-      // if (data?.data?.error) {
-      //   dispatch(setError(data.data.error))
-      //   toast.error(data.data.error)
-      // } else {
-      //   toast.success('Content type created successfully')
-      //   setShowDialog(false)
-      //   setNewTypeTitle('')
-      //   setNewTypeDescription('')
-      //   // Refresh content types list
-      //   await contentTypeReq()
-      // }
+      if (response.status === false) {
+        dispatch(setError(response.message))
+        toast.error(response.message)
+      } else {
+        toast.success('Content type created successfully')
+        setShowDialog(false)
+        setNewTypeTitle('')
+        setNewTypeDescription('')
 
-      toast.success('Content type created successfully')
-      setShowDialog(false)
-      setNewTypeTitle('')
-      setNewTypeDescription('')
-      // Refresh content types list
-      await contentTypeReq()
+        // Fetch updated content types
+        const updatedTypesResponse = await getContentTypes()
+        if (updatedTypesResponse.contentTypes) {
+          dispatch(setContentTypes(updatedTypesResponse.contentTypes))
+        }
+      }
     } catch (error) {
       let errorMsg = 'An error occurred while creating content type'
       if (error instanceof Error) {
@@ -346,7 +361,7 @@ export default function PostForm({
       dispatch(setError(errorMsg))
       toast.error(errorMsg)
     } finally {
-      dispatch(setLoading(false))
+      setIsCreatingType(false)
     }
   }
 
@@ -463,6 +478,32 @@ export default function PostForm({
                 </FormItem>
               )}
             />
+
+            {form.watch('status') === 'scheduled' && (
+              <FormField
+                control={form.control}
+                name='scheduled_at'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule Date and Time</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='datetime-local'
+                        {...field}
+                        value={field.value || ''}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className='w-full p-2 border rounded-md'
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Select when you want this post to be published
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name='postType'
@@ -474,7 +515,7 @@ export default function PostForm({
                       <select
                         {...field}
                         className='w-[90%] px-2 h-12 border rounded-md dark:bg-black dark:text-white'
-                        defaultValue={reduxPostTypeId || ''}
+                        // defaultValue={reduxPostTypeId || ''}
                       >
                         <option value=''>Select a type</option>
                         {contentTypes?.map((type) => (
@@ -501,7 +542,7 @@ export default function PostForm({
             />
 
             <Dialog open={showDialog} onOpenChange={setShowDialog}>
-              <DialogContent>
+              <DialogContent className='flex flex-col gap-5'>
                 <DialogHeader>
                   <DialogTitle>Create New Content Type</DialogTitle>
                   <DialogDescription>
@@ -509,16 +550,16 @@ export default function PostForm({
                   </DialogDescription>
                 </DialogHeader>
                 <div className='flex flex-col gap-5 w-full'>
-                  <div className='flex flex-col gap-3 w-full'>
-                    <Label>Title</Label>
+                  <div className='flex flex-col gap-2 w-full'>
+                    <Label className='text-sm'>Title</Label>
                     <Input
                       placeholder='e.g., Blog Post, News Article, etc.'
                       value={newTypeTitle}
                       onChange={(e) => setNewTypeTitle(e.target.value)}
                     />
                   </div>
-                  <div className='flex flex-col gap-3 w-full'>
-                    <Label>Slug</Label>
+                  <div className='flex flex-col gap-2 w-full'>
+                    <Label className='text-sm'>Slug</Label>
                     <Input
                       value={slugify(newTypeTitle, {
                         lower: true,
@@ -526,12 +567,10 @@ export default function PostForm({
                       })}
                       disabled
                     />
-                    <p className='text-sm text-accent-foreground'>
-                      Auto-generated from title
-                    </p>
+                    <p className='text-sm'>Auto-generated from title</p>
                   </div>
-                  <div className='flex flex-col gap-3 w-full'>
-                    <Label>Description</Label>
+                  <div className='flex flex-col gap-2 w-full'>
+                    <Label className='text-sm'>Description</Label>
                     <Textarea
                       placeholder='Describe the purpose of this content type...'
                       value={newTypeDescription}
@@ -547,37 +586,16 @@ export default function PostForm({
                   >
                     Cancel
                   </Button>
-                  <Button type='button' onClick={createContentTypeReq}>
-                    Create
+                  <Button
+                    type='button'
+                    disabled={isCreatingtype}
+                    onClick={createContentTypeReq}
+                  >
+                    {isCreatingtype ? 'Creating...' : 'Create'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-
-            {form.watch('status') === 'scheduled' && (
-              <FormField
-                control={form.control}
-                name='scheduled_at'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Schedule Date and Time</FormLabel>
-                    <FormControl>
-                      <Input
-                        type='datetime-local'
-                        {...field}
-                        value={field.value || ''}
-                        min={new Date().toISOString().slice(0, 16)}
-                        className='w-full p-2 border rounded-md'
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Select when you want this post to be published
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
           </div>
           <FormField
             control={form.control}

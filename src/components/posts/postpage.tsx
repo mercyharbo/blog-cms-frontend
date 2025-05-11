@@ -34,13 +34,6 @@ import {
   TableRow,
 } from '../ui/table'
 
-// interface TextNode {
-//   text: string
-// }
-
-// interface ContentBlock {
-//   children?: TextNode[]
-// }
 
 export default function PostListPage() {
   const dispatch = useAppDispatch()
