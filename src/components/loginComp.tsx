@@ -54,70 +54,112 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='min-h-screen px-5 flex flex-col items-center justify-center'>
-      <div className='bg-white dark:bg-accent-foreground p-5 lg:p-10 rounded-lg shadow-md w-full flex flex-col items-center gap-5 lg:w-5/12'>
-        <div className='flex flex-col items-center justify-center gap-4 mb-6'>
-          {/* <img src='/logo.png' alt='Logo' className='h-16 w-16' /> */}
-          <h1 className='text-2xl font-bold'>Welcome Back</h1>
-          <p className='text-gray-600 text-center text-sm max-w-xs'>
+    <div className='min-h-screen px-5 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:w-2/5 border border-gray-100 dark:border-gray-700'>
+        <div className='flex flex-col items-center justify-center gap-3 w-full'>
+          <div className='w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center'>
+            <img src='/window.svg' alt='Logo' className='h-8 w-8' />
+          </div>
+          <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
+            Welcome Back
+          </h1>
+          <p className='text-gray-500 dark:text-gray-400 text-center text-sm max-w-sm'>
             Access your content management system to create, edit, and manage
             your digital content seamlessly.
           </p>
-        </div>
-
+        </div>{' '}
         <form
           autoComplete='on'
           onSubmit={handleLogin}
           className='w-full flex flex-col gap-5'
         >
-          <Input
-            type='email'
-            placeholder='Email'
-            name='email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className='h-12'
-            required
-          />
-
-          <div className='relative'>
+          <div className='space-y-2'>
+            <label
+              htmlFor='email'
+              className='text-sm font-medium text-gray-700 dark:text-gray-300'
+            >
+              Email address
+            </label>
             <Input
-              type={showPassword ? 'text' : 'password'}
-              placeholder='Password'
-              name='password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className='h-12'
+              id='email'
+              type='email'
+              placeholder='Enter your email'
+              name='email'
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className='h-11 transition-all'
               required
             />
-            <button
-              type='button'
-              onClick={() => setShowPassword(!showPassword)}
-              className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700'
+          </div>
+
+          <div className='space-y-2'>
+            <label
+              htmlFor='password'
+              className='text-sm font-medium text-gray-700 dark:text-gray-300'
             >
-              {showPassword ? (
-                <IoEyeOffOutline size={20} />
-              ) : (
-                <IoEyeOutline size={20} />
-              )}
-            </button>
+              Password
+            </label>
+            <div className='relative'>
+              <Input
+                id='password'
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Enter your password'
+                name='password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className='h-11 transition-all'
+                required
+              />
+              <button
+                type='button'
+                onClick={() => setShowPassword(!showPassword)}
+                className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
+              >
+                {showPassword ? (
+                  <IoEyeOffOutline size={18} />
+                ) : (
+                  <IoEyeOutline size={18} />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button
             type='submit'
             disabled={loading}
-            className='h-12 cursor-pointer'
+            className='h-11 mt-2 font-medium transition-all'
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <div className='flex items-center justify-center gap-2'>
+                <div className='h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                Logging in...
+              </div>
+            ) : (
+              'Sign in to your account'
+            )}
           </Button>
         </form>
-
-        <p className='text-center text-gray-600 flex items-center justify-center gap-1'>
-          Don&apos;t have an account?{' '}
-          <Link href='/signup' className='text-blue-600 hover:underline'>
-            Sign up
-          </Link>
-        </p>
+        <div className='flex flex-col justify-center items-center gap-4 text-sm'>
+          {' '}
+          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+            Don&apos;t have an account?{' '}
+            <Link
+              href='/signup'
+              className='font-medium text-primary hover:text-primary/90 transition-colors'
+            >
+              Create an account
+            </Link>
+          </p>
+          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+            Forget your password?{' '}
+            <Link
+              href='/forgot-password'
+              className='font-medium text-primary hover:text-primary/90 transition-colors'
+            >
+              Reset password
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

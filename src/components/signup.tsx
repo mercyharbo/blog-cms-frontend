@@ -57,77 +57,119 @@ export default function SignupPage() {
   }
 
   return (
-    <div className='min-h-screen px-5 flex items-center justify-center'>
-      <div className='bg-white dark:bg-accent-foreground p-5 lg:p-10 rounded-lg shadow-md w-full flex flex-col items-center gap-5 lg:w-5/12'>
-        <div className='flex flex-col items-center justify-center gap-4 mb-6'>
-          {/* <img src='/logo.png' alt='Logo' className='h-16 w-16' /> */}
-          <h1 className='text-2xl font-bold'>Create an Account</h1>
-          <p className='text-gray-600 text-center text-sm max-w-xs'>
+    <div className='min-h-screen px-5 flex items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:w-2/5 border border-gray-100 dark:border-gray-700'>
+        <div className='flex flex-col items-center justify-center gap-3 w-full'>
+          <div className='w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center'>
+            <img src='/window.svg' alt='Logo' className='h-8 w-8' />
+          </div>
+          <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
+            Create Account
+          </h1>
+          <p className='text-gray-500 dark:text-gray-400 text-center text-sm max-w-sm'>
             Join our content management system to start creating and managing
             your digital content today.
           </p>
-        </div>
-
+        </div>{' '}
         <form onSubmit={handleSignup} className='w-full flex flex-col gap-5'>
-          <Input
-            type='email'
-            placeholder='Email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className='h-12'
-            required
-          />
-          <div className='relative'>
+          <div className='space-y-2'>
+            <label
+              htmlFor='email'
+              className='text-sm font-medium text-gray-700 dark:text-gray-300'
+            >
+              Email address
+            </label>
             <Input
-              type={showPassword ? 'text' : 'password'}
-              placeholder='Password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className='h-12 pr-10'
+              id='email'
+              type='email'
+              placeholder='Enter your email'
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className='h-11 transition-all'
               required
             />
-            <button
-              type='button'
-              onClick={() => setShowPassword(!showPassword)}
-              className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700'
+          </div>
+
+          <div className='space-y-2'>
+            <label
+              htmlFor='password'
+              className='text-sm font-medium text-gray-700 dark:text-gray-300'
             >
-              {showPassword ? (
-                <IoEyeOffOutline size={20} />
-              ) : (
-                <IoEyeOutline size={20} />
-              )}
-            </button>
+              Password
+            </label>
+            <div className='relative'>
+              <Input
+                id='password'
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Create a password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className='h-11 transition-all'
+                required
+              />
+              <button
+                type='button'
+                onClick={() => setShowPassword(!showPassword)}
+                className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
+              >
+                {showPassword ? (
+                  <IoEyeOffOutline size={18} />
+                ) : (
+                  <IoEyeOutline size={18} />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button
             type='submit'
-            className='h-12 cursor-pointer'
+            className='h-11 mt-2 font-medium transition-all'
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            {loading ? (
+              <div className='flex items-center justify-center gap-2'>
+                <div className='h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                Creating your account...
+              </div>
+            ) : (
+              'Create account'
+            )}
           </Button>
-        </form>
-
+        </form>{' '}
         {showVerificationMessage && (
-          <div className='mt-4 p-4 bg-green-50 border border-green-200 rounded-md'>
-            <p className='text-green-800 text-sm text-center'>
+          <div className='w-full mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 rounded-xl'>
+            <p className='text-emerald-800 dark:text-emerald-300 text-sm text-center'>
               A verification email has been sent to{' '}
               <span className='font-medium'>{email}</span>. Please check your
               inbox and verify your email.
               <br />
-              <span className='text-xs text-green-600'>
+              <span className='text-xs text-emerald-600 dark:text-emerald-400 mt-1 block'>
                 You will be redirected to the login page in 30 seconds.
               </span>
             </p>
           </div>
         )}
+        <div className='flex flex-col justify-center items-center gap-4 text-sm'>
+          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+            Already have an account?{' '}
+            <Link
+              href='/'
+              className='font-medium text-primary hover:text-primary/90 transition-colors'
+            >
+              Sign in
+            </Link>
+          </p>
 
-        <p className='text-center text-gray-600 flex items-center justify-center gap-1'>
-          Have an account?{' '}
-          <Link href='/' className='text-blue-600 hover:underline'>
-            Sign in
-          </Link>
-        </p>
+          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+            Forget your password?{' '}
+            <Link
+              href='/forgot-password'
+              className='font-medium text-primary hover:text-primary/90 transition-colors'
+            >
+              Reset password
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
