@@ -1,8 +1,16 @@
 'use client'
 
-import { getContentTypes } from '@/api/contentReq'
+import { deleteContentType, getContentTypes } from '@/api/contentReq'
 import CreateContentTypeDialog from '@/components/content-types/CreateContentTypeDialog'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import PageLoadingSpinner from '@/components/ui/PageLoadingSpinner'
 import {
@@ -28,6 +36,9 @@ import { toast } from 'react-toastify'
 export default function ContentTypes() {
   const dispatch = useAppDispatch()
   const [showDialog, setShowDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [typeToDelete, setTypeToDelete] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<{
     id: string
     title: string
@@ -72,6 +83,34 @@ export default function ContentTypes() {
     }
   }
 
+  const handleDeleteContenType = async (id: string) => {
+    setIsDeleting(true)
+    try {
+      const res = await deleteContentType(id)
+
+      if (res.status === false) {
+        dispatch(setError(res.message))
+        toast.error(res.message)
+      } else {
+        toast.success(res.message)
+        setTimeout(() => {
+          contentTypeReq()
+        }, 5000)
+      }
+    } catch (error) {
+      let errorMsg = 'An error occurred while deleting content type'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+      dispatch(setError(errorMsg))
+      toast.error(errorMsg)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   useEffect(() => {
     contentTypeReq()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,9 +144,8 @@ export default function ContentTypes() {
           onOpenChange={handleCloseDialog}
           onSuccess={contentTypeReq}
           initialData={selectedType}
-        />
-      </header>
-
+        />{' '}
+      </header>{' '}
       <div className='rounded-xl border bg-card w-full overflow-auto'>
         <Table>
           <TableHeader>
@@ -136,10 +174,15 @@ export default function ContentTypes() {
                         className='text-muted-foreground hover:text-foreground'
                       >
                         <FiEdit2 className='h-4 w-4' />
-                      </Button>
+                      </Button>{' '}
                       <Button
                         variant='ghost'
                         size='sm'
+                        onClick={() => {
+                          setTypeToDelete(type.id)
+                          setShowDeleteDialog(true)
+                        }}
+                        disabled={loading}
                         className='text-muted-foreground hover:text-destructive focus:text-destructive'
                       >
                         <FiTrash2 className='h-4 w-4' />
@@ -158,6 +201,35 @@ export default function ContentTypes() {
           </TableBody>
         </Table>
       </div>
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Content Type</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this content type? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant='ghost' onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={() => {
+                if (typeToDelete) {
+                  handleDeleteContenType(typeToDelete)
+                  setShowDeleteDialog(false)
+                  setTypeToDelete(null)
+                }
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
