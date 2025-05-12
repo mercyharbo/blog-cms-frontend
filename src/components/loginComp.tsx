@@ -34,10 +34,12 @@ export default function LoginPage() {
     try {
       const data = await postUserLogin(email, password)
 
-      if (data?.session) {
+      if (data?.status === true) {
         toast.success(data.message)
-        router.push('/dashboard')
-      } else {
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 3000)
+      } else if (data?.status === false) {
         toast.error(data?.message || 'Login failed')
       }
     } catch (error) {

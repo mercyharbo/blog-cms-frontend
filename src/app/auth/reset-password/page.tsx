@@ -4,8 +4,9 @@ import { postUserResetPassword } from '@/api/authReq'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useState } from 'react'
 import { DiIe } from 'react-icons/di'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
@@ -13,24 +14,29 @@ import { toast } from 'react-toastify'
 function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [hasValidToken, setHasValidToken] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  // Add useEffect to check token on mount
-  useEffect(() => {
-    const token = searchParams.get('token')
-    console.log('token', token)
-    if (!token) {
-      toast.error('Invalid or expired reset link')
-      router.push('/')
-      return
-    }
-    setHasValidToken(true)
-  }, [searchParams, router])
+  //   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+  //     e.preventDefault()
+  //     // Your existing handleResetPassword logic will go here when uncommented
+  //   }
+
+  //   //   useEffect(() => {
+  //   //     const token = searchParams?.get('token')
+  //   //     const type = searchParams?.get('type')
+
+  //   //     if (!token || type !== 'recovery') {
+  //   //       toast.error('Invalid or missing reset token')
+  //   //       router.push('/')
+  //   //       return
+  //   //     }
+
+  //   //     setHasValidToken(true)
+  //   //   }, [searchParams, router])
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -46,22 +52,17 @@ function ResetPasswordForm() {
     }
     setLoading(true)
     try {
-      // Get the token from the URL query parameters
-      const token = searchParams.get('token')
-
+      const token = searchParams?.get('token')
       if (!token) {
         toast.error('Invalid or expired reset link')
-        router.push('/')
         return
       }
 
       const response = await postUserResetPassword(token, password)
-
       if (response.status === false) {
         toast.error(response.message || 'Failed to reset password')
-      } else if (response.status === true) {
+      } else {
         toast.success('Password reset successful')
-        // Redirect to login page after successful password reset
         setTimeout(() => {
           router.push('/')
         }, 2000)
@@ -72,9 +73,6 @@ function ResetPasswordForm() {
     } finally {
       setLoading(false)
     }
-  }
-  if (!hasValidToken) {
-    return null // Don't render anything while checking token
   }
 
   return (
@@ -163,6 +161,16 @@ function ResetPasswordForm() {
             )}
           </Button>
         </form>
+
+        <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+          Don&apos;t have an account?{' '}
+          <Link
+            href='/'
+            className='font-medium text-primary hover:text-primary/90 transition-colors'
+          >
+            Login
+          </Link>
+        </p>
       </div>
     </div>
   )

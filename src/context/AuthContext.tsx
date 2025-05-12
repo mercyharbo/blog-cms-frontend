@@ -27,12 +27,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(() => {
     const token = cookies.get('access_token')
+    const path = window.location.pathname
+
+    // Don't check auth for these paths
+    if (
+      path.startsWith('/auth/reset-password') ||
+      path === '/signup' ||
+      path === '/forget-password'
+    ) {
+      return true
+    }
+
     if (!token) {
       setIsAuthenticated(false)
       cookies.remove('access_token')
-      router.replace('/')
+      if (!path.startsWith('/auth/') && path !== '/') {
+        router.replace('/')
+      }
       return false
     }
+
     setIsAuthenticated(true)
     return true
   }, [cookies, router])
