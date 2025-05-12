@@ -5,22 +5,34 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 import { DiIe } from 'react-icons/di'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 
 function ResetPasswordForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  console.log('searchParams', searchParams.get('access_token'))
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Still need to use window.location.hash since useSearchParams doesn't access the hash
+    if (typeof window !== 'undefined') {
+      const hashFragment = window.location.hash.substring(1)
+      const params = new URLSearchParams(hashFragment)
+      const token = params.get('access_token')
+
+      if (token) {
+        setAccessToken(token)
+      }
+    }
+  }, [])
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -34,22 +46,23 @@ function ResetPasswordForm() {
       toast.error('Password must be at least 6 characters long')
       return
     }
+
     setLoading(true)
+
     try {
-      const token = searchParams?.get('access_token')
-      if (!token) {
-        toast.error('Invalid or expired reset link')
+      if (!accessToken) {
+        toast.error('Access token is missing')
         return
       }
 
-      const response = await postUserResetPassword(token, password)
+      const response = await postUserResetPassword(accessToken, password)
       if (response.status === false) {
         toast.error(response.message || 'Failed to reset password')
       } else {
         toast.success('Password reset successful')
         setTimeout(() => {
           router.push('/')
-        }, 2000)
+        }, 3000)
       }
     } catch (error) {
       console.error('Error resetting password:', error)
