@@ -52,7 +52,7 @@ function ResetPasswordForm() {
     }
     setLoading(true)
     try {
-      const token = searchParams?.get('token')
+      const token = searchParams?.get('access_token')
       if (!token) {
         toast.error('Invalid or expired reset link')
         return

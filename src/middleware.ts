@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server'
 export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')
   const pathname = request.nextUrl.pathname
-  const searchParams = request.nextUrl.searchParams
 
   // Allow unauthenticated access to public auth pages
   const publicPaths = ['/signup', '/forget-password']
@@ -12,8 +11,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Allow unauthenticated access to reset-password if token param exists
-  if (pathname === '/auth/reset-password' && searchParams.has('token')) {
+  // Allow unauthenticated access to reset-password page and all its subroutes
+  if (pathname.startsWith('/auth/reset-password')) {
     return NextResponse.next()
   }
 
