@@ -4,20 +4,33 @@ import { postUserResetPassword } from '@/api/authReq'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useParams, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { DiIe } from 'react-icons/di'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 
 export default function ResetPassword() {
   const router = useRouter()
-  const searchParams = useParams<{ token: string }>()
+  const searchParams = useSearchParams()
+  const [hasValidToken, setHasValidToken] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Add useEffect to check token on mount
+  useEffect(() => {
+    const token = searchParams.get('token')
+    console.log('token', token)
+    if (!token) {
+      toast.error('Invalid or expired reset link')
+      router.push('/')
+      return
+    }
+    setHasValidToken(true)
+  }, [searchParams, router])
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -34,10 +47,11 @@ export default function ResetPassword() {
     setLoading(true)
     try {
       // Get the token from the URL query parameters
-      const token = searchParams.token
+      const token = searchParams.get('token')
 
       if (!token) {
         toast.error('Invalid or expired reset link')
+        router.push('/')
         return
       }
 
@@ -58,6 +72,9 @@ export default function ResetPassword() {
     } finally {
       setLoading(false)
     }
+  }
+  if (!hasValidToken) {
+    return null // Don't render anything while checking token
   }
 
   return (
