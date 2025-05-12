@@ -96,7 +96,9 @@ export default function NavMenu() {
       >
         <div className='flex items-center justify-between mb-8'>
           <Link href={'/'}>
-            <h1 className='text-2xl lg:text-3xl font-bold capitalize'>logo</h1>
+            <h1 className='text-2xl lg:text-3xl font-bold capitalize'>
+              QuillDesk
+            </h1>
           </Link>
 
           <button onClick={toggleMenu} className='lg:hidden p-2 -mr-2'>

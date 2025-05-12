@@ -180,3 +180,25 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 
   return data
 }
+
+export async function forgetPassword(email: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to send reset password email')
+  }
+
+  return data
+}
