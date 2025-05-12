@@ -14,6 +14,14 @@ import {
 import { Input } from '@/components/ui/input'
 import PageLoadingSpinner from '@/components/ui/PageLoadingSpinner'
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import {
   Table,
   TableBody,
   TableCell,
@@ -39,6 +47,7 @@ export default function ContentTypes() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [typeToDelete, setTypeToDelete] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const [selectedType, setSelectedType] = useState<{
     id: string
     title: string
@@ -158,10 +167,10 @@ export default function ContentTypes() {
               <TableHead>Last Updated</TableHead>
               <TableHead className='text-right'>Actions</TableHead>
             </TableRow>
-          </TableHeader>
+          </TableHeader>{' '}
           <TableBody>
             {contentTypes.length > 0 ? (
-              contentTypes.map((type) => (
+              contentTypes.slice((page - 1) * 25, page * 25).map((type) => (
                 <TableRow key={type.id}>
                   <TableCell className='font-medium'>{type.title}</TableCell>
                   <TableCell>{type.name}</TableCell>
@@ -203,6 +212,44 @@ export default function ContentTypes() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className='flex justify-center my-6'>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href='#'
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-disabled={page <= 1}
+              />
+            </PaginationItem>
+            {Array.from(
+              { length: Math.ceil(contentTypes.length / 25) },
+              (_, i) => i + 1
+            ).map((pageNumber) => (
+              <PaginationItem key={pageNumber}>
+                <PaginationLink
+                  href='#'
+                  onClick={() => setPage(pageNumber)}
+                  isActive={page === pageNumber}
+                >
+                  {pageNumber}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                href='#'
+                onClick={() =>
+                  setPage((p) =>
+                    Math.min(Math.ceil(contentTypes.length / 25), p + 1)
+                  )
+                }
+                aria-disabled={page >= Math.ceil(contentTypes.length / 25)}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>

@@ -26,6 +26,14 @@ import { toast } from 'react-toastify'
 import { Button } from '../ui/button'
 import PageLoadingSpinner from '../ui/PageLoadingSpinner'
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '../ui/pagination'
+import {
   Table,
   TableBody,
   TableCell,
@@ -34,12 +42,12 @@ import {
   TableRow,
 } from '../ui/table'
 
-
 export default function PostListPage() {
   const dispatch = useAppDispatch()
   const { posts, loading, contentTypes } = useAppSelector(
     (state) => state.content
   )
+  const [page, setPage] = useState(1)
   const [selectedContentType, setSelectedContentType] =
     useState<ContentType | null>(null)
   const [postToDelete, setPostToDelete] = useState<{
@@ -189,7 +197,7 @@ export default function PostListPage() {
                   }
                 }
               }}
-              className='border rounded-md w-full lg:w-auto md:w-auto px-3 py-2 h-12 text-sm bg-transparent text-black dark:bg-black dark:text-white focus:ring-2 focus:ring-primary/20'
+              className='border rounded-md w-full lg:w-auto md:w-auto px-3 h-12 text-sm bg-transparent text-black dark:bg-black dark:text-white focus:ring-2 focus:ring-primary/20'
             >
               <option value=''>All Content</option>
               {contentTypes.map((type) => (
@@ -209,7 +217,7 @@ export default function PostListPage() {
             <Button
               variant='default'
               size='lg'
-              className='w-full lg:w-auto md:w-auto gap-2'
+              className='w-full h-12 lg:w-auto md:w-auto gap-2'
             >
               <BiPlus className='h-4 w-4' />
               New Post
@@ -229,10 +237,10 @@ export default function PostListPage() {
               <TableHead>Created At</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
-          </TableHeader>
+          </TableHeader>{' '}
           <TableBody>
             {posts.length > 0 ? (
-              posts.map((post) => (
+              posts.slice((page - 1) * 25, page * 25).map((post) => (
                 <TableRow key={post.id}>
                   {' '}
                   <TableCell className='font-medium max-w-[200px] truncate'>
@@ -276,9 +284,53 @@ export default function PostListPage() {
                   No posts found
                 </TableCell>
               </TableRow>
-            )}
+            )}{' '}
           </TableBody>
         </Table>
+      </div>
+
+      <div className='flex justify-center my-6'>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href='#'
+                onClick={(e) => {
+                  e.preventDefault()
+                  setPage((p) => Math.max(1, p - 1))
+                }}
+                aria-disabled={page <= 1}
+              />
+            </PaginationItem>
+            {Array.from(
+              { length: Math.ceil(posts.length / 25) },
+              (_, i) => i + 1
+            ).map((pageNumber) => (
+              <PaginationItem key={pageNumber}>
+                <PaginationLink
+                  href='#'
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setPage(pageNumber)
+                  }}
+                  isActive={page === pageNumber}
+                >
+                  {pageNumber}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                href='#'
+                onClick={(e) => {
+                  e.preventDefault()
+                  setPage((p) => Math.min(Math.ceil(posts.length / 25), p + 1))
+                }}
+                aria-disabled={page >= Math.ceil(posts.length / 25)}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
 
       <Dialog
