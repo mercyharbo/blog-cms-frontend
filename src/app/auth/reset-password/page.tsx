@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { DiIe } from 'react-icons/di'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 
-export default function ResetPassword() {
+function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [hasValidToken, setHasValidToken] = useState(false)
@@ -165,5 +165,19 @@ export default function ResetPassword() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center'>
+          <div className='h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin'></div>
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
