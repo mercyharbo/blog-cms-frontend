@@ -15,6 +15,7 @@ import {
   IoShieldOutline,
 } from 'react-icons/io5'
 import { MdArticle } from 'react-icons/md'
+import { toast } from 'react-toastify'
 import Cookies from 'universal-cookie'
 import { Button } from './ui/button'
 
@@ -60,14 +61,15 @@ export default function NavMenu() {
     setIsLoggingOut(true)
     try {
       const data = await postUserLogout()
-      if (data) {
-        cookiestore.remove('access_token')
 
+      if (data.status === true) {
+        cookiestore.remove('access_token')
+        toast.success(data.message)
         setTimeout(() => {
           router.push('/')
-        }, 5000)
-      } else {
-        console.error('Logout failed:', data)
+        }, 3000)
+      } else if (data.status === false) {
+        toast.error(data.message)
       }
     } catch (error) {
       console.error('Logout error:', error)
@@ -159,7 +161,9 @@ export default function NavMenu() {
           className='bg-transparent flex justify-start items-center gap-3 hover:bg-gray-700 text-gray-300 mt-auto mb-8 lg:mb-0'
         >
           <BiLogOut />
-          <span className='text-sm'>Logout</span>
+          <span className='text-sm'>
+            {isLoggingOut ? 'Logging Out...' : 'Logout'}
+          </span>
         </Button>
       </nav>
 

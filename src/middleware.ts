@@ -4,6 +4,18 @@ import { NextResponse } from 'next/server'
 export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')
   const pathname = request.nextUrl.pathname
+  const searchParams = request.nextUrl.searchParams
+
+  // Allow unauthenticated access to public auth pages
+  const publicPaths = ['/signup', '/forget-password']
+  if (publicPaths.includes(pathname)) {
+    return NextResponse.next()
+  }
+
+  // Allow unauthenticated access to reset-password if token param exists
+  if (pathname === '/auth/reset-password' && searchParams.has('token')) {
+    return NextResponse.next()
+  }
 
   // If user is authenticated and tries to access the login page (root path),
   // redirect them to dashboard

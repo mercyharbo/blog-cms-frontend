@@ -34,6 +34,9 @@ export async function postUserLogin(email: string, password: string) {
 }
 
 export async function postUserLogout() {
+  const cookie_store = new Cookies()
+  const access_token = cookie_store.get('access_token')
+
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
     {
@@ -41,7 +44,7 @@ export async function postUserLogout() {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        Authorization: `Bearer ${new Cookies().get('access_token')}`,
+        Authorization: `Bearer ${access_token}`,
       },
     }
   )

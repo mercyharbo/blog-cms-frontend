@@ -33,7 +33,7 @@ export default function LoginPage() {
 
     try {
       const data = await postUserLogin(email, password)
-
+      console.log('data', data)
       if (data?.status === true) {
         toast.success(data.message)
         setTimeout(() => {

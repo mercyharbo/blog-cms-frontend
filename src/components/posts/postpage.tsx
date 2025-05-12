@@ -55,6 +55,7 @@ export default function PostListPage() {
     title: string
     postTypeId: string
   } | null>(null)
+
   const getPostContents = useCallback(
     async (contentTypeId?: string) => {
       try {
@@ -67,10 +68,6 @@ export default function PostListPage() {
         } else if (response?.status === true) {
           dispatch(setPosts(response.contents))
         }
-
-        // if (response?.data?.contents) {
-        //   dispatch(setPosts(response.data.contents))
-        // }
       } catch (error) {
         let errorMsg = 'An error occurred while fetching content'
         if (error instanceof Error) {
@@ -89,12 +86,6 @@ export default function PostListPage() {
 
     try {
       const response = await getContentTypes()
-      console.log('Content Types Response:', response)
-
-      // if (response?.data?.status === false) {
-      //   dispatch(setError(response.data.message))
-      //   toast.error(response.data.message)
-      // }
 
       if (response?.contentTypes) {
         dispatch(setContentTypes(response.contentTypes))
@@ -237,12 +228,11 @@ export default function PostListPage() {
               <TableHead>Created At</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
-          </TableHeader>{' '}
+          </TableHeader>
           <TableBody>
             {posts.length > 0 ? (
               posts.slice((page - 1) * 25, page * 25).map((post) => (
                 <TableRow key={post.id}>
-                  {' '}
                   <TableCell className='font-medium max-w-[200px] truncate'>
                     {post.data.title}
                   </TableCell>
@@ -284,7 +274,7 @@ export default function PostListPage() {
                   No posts found
                 </TableCell>
               </TableRow>
-            )}{' '}
+            )}
           </TableBody>
         </Table>
       </div>
