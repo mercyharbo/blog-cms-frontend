@@ -86,7 +86,7 @@ export async function getContent(contentTypeId?: string) {
   const cookie_store = new Cookies()
   const access_token = cookie_store.get('access_token')
   const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/content`
-  const url = contentTypeId ? `${baseUrl}/${contentTypeId}` : baseUrl
+  const url = contentTypeId ? `${baseUrl}/type/${contentTypeId}` : baseUrl
 
   const res = await fetch(url, {
     method: 'GET',
