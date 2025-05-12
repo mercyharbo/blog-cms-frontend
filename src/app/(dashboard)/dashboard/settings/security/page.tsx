@@ -1,5 +1,6 @@
 'use client'
 
+import { changePassword } from '@/api/authReq'
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,12 +16,34 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 
 import { useState } from 'react'
+import { toast } from 'react-toastify'
 
 export default function SecurityPage() {
-  // Password states
+  const [isLoading, setIsLoading] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      const response = await changePassword(currentPassword, newPassword)
+      if (response.status === true) {
+        toast.success(response.message)
+      } else {
+        toast.error(response.message)
+      }
+    } catch (error) {
+      let errorMsg = 'An error occurred while deleting content'
+      if (error instanceof Error) {
+        errorMsg = error.message
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className='container max-w-4xl py-6 space-y-8'>
@@ -48,7 +71,7 @@ export default function SecurityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form className='space-y-4'>
+              <form onSubmit={handlePasswordChange} className='space-y-4'>
                 <div className='space-y-2'>
                   <Label htmlFor='currentPassword'>Current Password</Label>
                   <Input
@@ -69,19 +92,9 @@ export default function SecurityPage() {
                     // disabled={isLoading}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='confirmPassword'>Confirm New Password</Label>
-                  <Input
-                    id='confirmPassword'
-                    type='password'
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    // disabled={isLoading}
-                  />
-                </div>
-                <Button type='submit'>
-                  Update Password
-                  {/* {isLoading ? 'Updating...' : 'Update Password'} */}
+
+                <Button type='submit' variant='default' size='lg'>
+                  {isLoading ? 'Updating...' : 'Update Password'}
                 </Button>
               </form>
             </CardContent>

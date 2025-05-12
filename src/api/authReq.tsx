@@ -155,3 +155,28 @@ export async function updateUserProfile(
 
   return data
 }
+
+export async function changePassword(oldPassword: string, newPassword: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/change-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${new Cookies().get('access_token')}`,
+      },
+      body: JSON.stringify({
+        oldPassword,
+        newPassword,
+      }),
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to change password')
+  }
+
+  return data
+}
