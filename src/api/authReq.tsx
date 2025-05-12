@@ -75,28 +75,6 @@ export async function postUserRegister(email: string, password: string) {
   return data
 }
 
-export async function postUserForgotPassword(email: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ email }),
-    }
-  )
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to process forgot password request')
-  }
-
-  return data
-}
-
 export async function postUserResetPassword(
   token: string,
   newPassword: string
@@ -108,8 +86,9 @@ export async function postUserResetPassword(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({ new_password: newPassword }),
     }
   )
 
