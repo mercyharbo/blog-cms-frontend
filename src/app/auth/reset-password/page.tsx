@@ -20,23 +20,7 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  //   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
-  //     e.preventDefault()
-  //     // Your existing handleResetPassword logic will go here when uncommented
-  //   }
-
-  //   //   useEffect(() => {
-  //   //     const token = searchParams?.get('token')
-  //   //     const type = searchParams?.get('type')
-
-  //   //     if (!token || type !== 'recovery') {
-  //   //       toast.error('Invalid or missing reset token')
-  //   //       router.push('/')
-  //   //       return
-  //   //     }
-
-  //   //     setHasValidToken(true)
-  //   //   }, [searchParams, router])
+  console.log('searchParams', searchParams.get('access_token'))
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
