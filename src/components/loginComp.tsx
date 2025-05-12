@@ -153,15 +153,7 @@ export default function LoginPage() {
               Create an account
             </Link>
           </p>
-          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
-            Forget your password?{' '}
-            <Link
-              href='/forget-password'
-              className='font-medium text-primary hover:text-primary/90 transition-colors'
-            >
-              Reset password
-            </Link>
-          </p>
+         
         </div>
       </div>
     </div>
