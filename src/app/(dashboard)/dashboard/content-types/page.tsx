@@ -122,18 +122,21 @@ export default function ContentTypes() {
 
   return (
     <main className='flex flex-col gap-8 w-full py-10'>
-      <header className='flex justify-between items-center w-full'>
-        <h1 className='text-4xl font-bold tracking-tight text-foreground'>
+      <header className='flex justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
+        <h1 className='lg:text-4xl text-2xl font-bold tracking-tight text-foreground'>
           Content Types
         </h1>
-        <div className='flex items-center gap-5'>
-          <Input placeholder='Search...' className='w-[300px]' />
+        <div className='flex items-start gap-5 flex-col w-full lg:w-auto lg:items-center lg:flex-row md:flex-row'>
+          <Input
+            placeholder='Search...'
+            className='lg:w-[400px] md:w-[70%] w-full'
+          />
           <Button
             variant='default'
             size='lg'
             type='button'
             onClick={() => handleOpenDialog()}
-            className='h-12 items-center gap-2'
+            className='h-12 items-center gap-2 w-full lg:w-auto md:w-[30%]'
           >
             <BiPlus />
             Create Content Type
