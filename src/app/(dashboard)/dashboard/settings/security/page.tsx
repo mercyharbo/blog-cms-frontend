@@ -37,12 +37,7 @@ export default function SecurityPage() {
         toast.error(response.message)
       }
     } catch (error) {
-      let errorMsg = 'An error occurred while deleting content'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
+      console.log(error)
     } finally {
       setIsLoading(false)
     }
@@ -95,8 +90,6 @@ export default function SecurityPage() {
                     disabled={isLoading}
                   />
                 </div>
-
-                
 
                 <Button
                   type='submit'

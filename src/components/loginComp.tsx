@@ -8,6 +8,7 @@ import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -58,7 +59,7 @@ export default function LoginPage() {
       <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:w-2/5 border border-gray-100 dark:border-gray-700'>
         <div className='flex flex-col items-center justify-center gap-3 w-full'>
           <div className='w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center'>
-            <img src='/window.svg' alt='Logo' className='h-8 w-8' />
+            <Image src='/window.svg' alt='Logo' className='h-8 w-8' />
           </div>
           <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
             Welcome Back
