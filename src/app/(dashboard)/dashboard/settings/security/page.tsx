@@ -30,6 +30,9 @@ export default function SecurityPage() {
       const response = await changePassword(currentPassword, newPassword)
       if (response.status === true) {
         toast.success(response.message)
+        setTimeout(() => {
+          window.location.reload()
+        }, 5000)
       } else {
         toast.error(response.message)
       }
@@ -73,27 +76,32 @@ export default function SecurityPage() {
             <CardContent>
               <form onSubmit={handlePasswordChange} className='space-y-4'>
                 <div className='space-y-2'>
-                  <Label htmlFor='currentPassword'>Current Password</Label>
+                  <Label htmlFor='current_password'>Current Password</Label>
                   <Input
-                    id='currentPassword'
+                    id='current_password'
                     type='password'
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    // disabled={isLoading}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='newPassword'>New Password</Label>
+                  <Label htmlFor='new_password'>New Password</Label>
                   <Input
-                    id='newPassword'
+                    id='new_password'
                     type='password'
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    // disabled={isLoading}
+                    disabled={isLoading}
                   />
                 </div>
 
-                <Button type='submit' variant='default' size='lg'>
+                <Button
+                  type='submit'
+                  disabled={isLoading}
+                  variant='default'
+                  size='lg'
+                >
                   {isLoading ? 'Updating...' : 'Update Password'}
                 </Button>
               </form>

@@ -166,8 +166,8 @@ export async function changePassword(oldPassword: string, newPassword: string) {
         Authorization: `Bearer ${new Cookies().get('access_token')}`,
       },
       body: JSON.stringify({
-        oldPassword,
-        newPassword,
+        current_password: oldPassword,
+        new_password: newPassword,
       }),
     }
   )
