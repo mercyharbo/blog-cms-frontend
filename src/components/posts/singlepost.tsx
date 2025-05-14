@@ -9,6 +9,7 @@ import {
   setError,
   setLoading,
 } from '@/store/features/contentSlice'
+import { SinglePost } from '@/types/post'
 import TiptapImage from '@tiptap/extension-image' // Rename the TipTap import
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -23,12 +24,14 @@ import PostForm from './PostForm'
 
 interface SinglePostPageProps {
   postId: string
-  // postTypeId: string
 }
 
 export default function SinglePostPage({ postId }: SinglePostPageProps) {
   const dispatch = useAppDispatch()
-  const { currentPost, loading } = useAppSelector((state) => state.content)
+  const { currentPost, loading } = useAppSelector((state) => state.content) as {
+    currentPost: SinglePost | null
+    loading: boolean
+  }
 
   // Add useCallback to memoize getContentsDetails
   const getContentsDetails = useCallback(async () => {
@@ -77,7 +80,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
       }),
     ],
     editable: false,
-    content: currentPost?.data.content || '', // Initialize with content if available
+    content: currentPost?.data?.content || '', // Initialize with content if available
   })
 
   // Fetch post details on mount
@@ -87,7 +90,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
 
   // Update editor content when post changes
   useEffect(() => {
-    if (currentPost?.data.content && editor) {
+    if (currentPost?.data?.content && editor) {
       const processContent = (content: string) => {
         return (
           content
@@ -131,7 +134,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
       const processedContent = processContent(currentPost.data.content)
       editor.commands.setContent(processedContent)
     }
-  }, [currentPost?.data.content, editor])
+  }, [currentPost?.data?.content, editor])
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const handleEditClick = () => setIsEditModalOpen(true)
@@ -155,7 +158,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
       <div className='flex flex-col space-y-8'>
         <div className='flex items-center justify-between gap-4'>
           <h1 className='text-4xl font-bold tracking-tight text-foreground'>
-            {currentPost?.data.title}
+            {currentPost.data.title}
           </h1>
 
           <Button
@@ -173,14 +176,14 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
           <div className='flex flex-wrap items-center gap-4 text-sm text-muted-foreground'>
             <div className='flex items-center gap-2'>
               <FiUser className='h-4 w-4' />
-              <span>{currentPost?.data.author}</span>
+              <span>{currentPost.data.author}</span>
             </div>
 
             <div className='flex items-center gap-2'>
               <FiCalendar className='h-4 w-4' />
               <span>
                 Created on{' '}
-                {new Date(currentPost?.created_at).toLocaleDateString('en-US', {
+                {new Date(currentPost.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -191,34 +194,34 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
 
           <Badge
             variant={
-              currentPost?.status === 'published'
+              currentPost.status === 'published'
                 ? 'default'
-                : currentPost?.status === 'scheduled'
+                : currentPost.status === 'scheduled'
                 ? 'destructive'
                 : 'secondary'
             }
             className='capitalize'
           >
-            {currentPost?.status === 'scheduled'
+            {currentPost.status === 'scheduled'
               ? '🕒 Scheduled'
-              : currentPost?.status}
+              : currentPost.status}
           </Badge>
         </div>
 
         <div className='flex flex-wrap gap-2'>
-          {currentPost?.data.tags?.map((tag) => (
+          {currentPost.data.tags?.map((tag) => (
             <Badge key={tag} variant='outline' className='capitalize'>
               {tag}
             </Badge>
           ))}
         </div>
 
-        {currentPost?.status === 'scheduled' && currentPost?.scheduled_at ? (
+        {currentPost.status === 'scheduled' && currentPost.scheduled_at ? (
           <div className='flex items-center gap-2'>
             <FiCalendar className='h-4 w-4' />
             <span>
               Scheduled for{' '}
-              {new Date(currentPost?.scheduled_at).toLocaleDateString('en-US', {
+              {new Date(currentPost.scheduled_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -230,10 +233,10 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
         ) : null}
 
         <div className='post-cover-image'>
-          {currentPost?.data.cover_image && (
+          {currentPost.data.cover_image && (
             <Image
-              src={currentPost?.data.cover_image.url}
-              alt={currentPost?.data.cover_image.alt}
+              src={currentPost.data.cover_image.url}
+              alt={currentPost.data.cover_image.alt}
               width={1200}
               height={500}
               className='h-[400px] object-cover rounded-lg w-full'
@@ -261,7 +264,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
       <SlideOutModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title={`Edit: ${currentPost?.data.title}`}
+        title={`Edit: ${currentPost.data.title}`}
       >
         <PostForm
           initialData={currentPost}

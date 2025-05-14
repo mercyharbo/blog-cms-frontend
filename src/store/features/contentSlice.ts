@@ -1,11 +1,11 @@
 import { ContentType } from '@/types/content'
-import { Post } from '@/types/post'
+import { Post, SinglePost } from '@/types/post'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 interface ContentState {
   contentTypes: ContentType[]
   posts: Post[]
-  currentPost: Post | null
+  currentPost: SinglePost | null
   loading: boolean
   error: string | null
 }
@@ -28,18 +28,14 @@ const contentSlice = createSlice({
     setPosts: (state, action: PayloadAction<Post[]>) => {
       state.posts = action.payload
     },
+    setCurrentPost: (state, action: PayloadAction<SinglePost>) => {
+      state.currentPost = action.payload
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload
-      state.loading = false
-    },
-    setCurrentPost: (state, action: PayloadAction<Post | null>) => {
-      state.currentPost = action.payload
-    },
-    clearCurrentPost: (state) => {
-      state.currentPost = null
     },
   },
 })
@@ -47,9 +43,9 @@ const contentSlice = createSlice({
 export const {
   setContentTypes,
   setPosts,
+  setCurrentPost,
   setLoading,
   setError,
-  setCurrentPost,
-  clearCurrentPost,
 } = contentSlice.actions
+
 export default contentSlice.reducer

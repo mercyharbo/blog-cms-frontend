@@ -23,7 +23,7 @@ import {
   setError,
   setLoading,
 } from '@/store/features/contentSlice'
-import { ContentType } from '@/types/content'
+import { Post, PostData, PostFormProps, SinglePost } from '@/types/post'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -75,31 +75,34 @@ const postSchema = z.object({
 // Infer the type from the schema
 type CreatePostData = z.infer<typeof postSchema>
 
-interface PostFormProps {
-  initialData?: {
-    id: string
-    type_id: string
-    user_id: string
-    created_at: string
-    updated_at: string
-    published_at: string | null
-    scheduled_at: string | null
-    status: 'draft' | 'published' | 'scheduled'
-    data: {
-      title: string
-      slug: string
-      author: string
-      content: string
-      cover_image?: { alt: string; url: string }
-      tags: string[]
-      meta_title: string
-      meta_keywords: string[]
-      reading_time: number
-    }
-    content_type?: ContentType
+// Type guard to check if the post is a SinglePost
+function isSinglePost(post: Post | SinglePost | undefined): post is SinglePost {
+  return (post as SinglePost)?.data !== undefined
+}
+
+// Helper function to get the value from either Post or SinglePost
+function getPostValue<K extends keyof PostData>(
+  post: Post | SinglePost | undefined,
+  key: K
+): PostData[K] {
+  if (!post) return getDefaultValue(key)
+  return isSinglePost(post) ? post.data[key] : (post as Post)[key]
+}
+
+// Helper function to get default values
+function getDefaultValue<K extends keyof PostData>(key: K): PostData[K] {
+  switch (key) {
+    case 'cover_image':
+      return { alt: '', url: '' } as PostData[K]
+    case 'tags':
+      return [] as string[] as PostData[K]
+    case 'meta_keywords':
+      return [] as string[] as PostData[K]
+    case 'reading_time':
+      return 0 as PostData[K]
+    default:
+      return '' as PostData[K]
   }
-  isEditing?: boolean
-  onSuccess?: () => void
 }
 
 export default function PostForm({
@@ -113,6 +116,8 @@ export default function PostForm({
   const [showDialog, setShowDialog] = useState(false)
   const { contentTypes } = useAppSelector((state) => state.content)
   const dispatch = useAppDispatch()
+
+  console.log('initialData', initialData)
 
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
@@ -151,17 +156,17 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
   const form = useForm<CreatePostData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      title: initialData?.data?.title || '',
-      slug: initialData?.data?.slug || '',
-      author: initialData?.data?.author || '',
-      content: initialData?.data?.content || '',
+      title: getPostValue(initialData, 'title'),
+      slug: getPostValue(initialData, 'slug'),
+      author: getPostValue(initialData, 'author'),
+      content: getPostValue(initialData, 'content'),
       status: initialData?.status || 'draft',
       scheduled_at: initialData?.scheduled_at ?? null,
-      cover_image: initialData?.data?.cover_image || { alt: '', url: '' },
-      tags: initialData?.data?.tags || [],
-      meta_title: initialData?.data?.meta_title || '',
-      meta_keywords: initialData?.data?.meta_keywords || [],
-      reading_time: initialData?.data?.reading_time || 0,
+      cover_image: getPostValue(initialData, 'cover_image'),
+      tags: getPostValue(initialData, 'tags'),
+      meta_title: getPostValue(initialData, 'meta_title'),
+      meta_keywords: getPostValue(initialData, 'meta_keywords'),
+      reading_time: getPostValue(initialData, 'reading_time'),
       postType: initialData?.type_id || '',
     },
   })
@@ -452,7 +457,6 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                 </FormItem>
               )}
             />{' '}
-            
             <CreateContentTypeDialog
               open={showDialog}
               onOpenChange={setShowDialog}
