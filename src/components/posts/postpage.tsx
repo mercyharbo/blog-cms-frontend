@@ -232,46 +232,49 @@ export default function PostListPage() {
           </TableHeader>
           <TableBody>
             {posts.length > 0 ? (
-              posts.slice((page - 1) * 25, page * 25).map((post) => {
-                console.log('Post:', post)
-                return (
-                  <TableRow key={post.id}>
-                    <TableCell className='font-medium max-w-[200px] truncate'>
-                      {post.title}
-                    </TableCell>
-                    <TableCell>{post.author}</TableCell>
-                    <TableCell className='capitalize'>
-                      {contentTypes.find((type) => type.id === post.type_id)
-                        ?.name || post.type_id}
-                    </TableCell>
-                    <TableCell className='capitalize'>{post.status}</TableCell>
-                    <TableCell>
-                      {format(new Date(post.created_at), 'dd MMMM yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-4'>
-                        <Link href={`/dashboard/${post.id}`}>
-                          <Button
-                            variant='ghost'
-                            size='sm'
-                            className='text-muted-foreground hover:text-foreground'
-                          >
-                            <FiEdit2 className='h-4 w-4' />
-                          </Button>
-                        </Link>
+              posts.slice((page - 1) * 25, page * 25).map((post) => (
+                <TableRow key={post.id}>
+                  <TableCell className='font-medium max-w-[200px] truncate'>
+                    {post.title || 'Untitled'}
+                  </TableCell>
+                  <TableCell>{post.author || 'Unknown'}</TableCell>
+                  <TableCell className='capitalize'>
+                    {contentTypes.find((type) => type.id === post.type_id)
+                      ?.name ||
+                      post.type_id ||
+                      'Unknown'}
+                  </TableCell>
+                  <TableCell className='capitalize'>
+                    {post.status || 'draft'}
+                  </TableCell>
+                  <TableCell>
+                    {post.created_at
+                      ? format(new Date(post.created_at), 'dd MMMM yyyy')
+                      : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className='flex items-center gap-4'>
+                      <Link href={`/dashboard/${post.id}`}>
                         <Button
                           variant='ghost'
                           size='sm'
-                          onClick={() => handleDeleteModal(post)}
-                          className='text-muted-foreground hover:text-destructive focus:text-destructive'
+                          className='text-muted-foreground hover:text-foreground'
                         >
-                          <FiTrash2 className='h-4 w-4' />
+                          <FiEdit2 className='h-4 w-4' />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
+                      </Link>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => handleDeleteModal(post)}
+                        className='text-muted-foreground hover:text-destructive focus:text-destructive'
+                      >
+                        <FiTrash2 className='h-4 w-4' />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className='text-center'>
