@@ -268,7 +268,7 @@ export async function deleteContent(postId: string) {
   const access_token = cookie_store.get('access_token')
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/content/types/${postId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`,
     {
       method: 'DELETE',
       headers: {

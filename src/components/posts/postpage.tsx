@@ -16,7 +16,8 @@ import {
   setLoading,
   setPosts,
 } from '@/store/features/contentSlice'
-import { ContentType, Post } from '@/types/content'
+import { ContentType } from '@/types/content'
+import { Post } from '@/types/post'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
@@ -55,6 +56,7 @@ export default function PostListPage() {
     title: string
     postTypeId: string
   } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const getPostContents = useCallback(
     async (contentTypeId?: string) => {
@@ -118,11 +120,10 @@ export default function PostListPage() {
     },
     [dispatch, getPostContents]
   )
-
   const handleDeleteModal = useCallback((post: Post) => {
     setPostToDelete({
       id: post.id,
-      title: post.data.title,
+      title: post.title,
       postTypeId: post.type_id,
     })
   }, [])
@@ -130,7 +131,7 @@ export default function PostListPage() {
   const deleteContentFunc = useCallback(
     async (postId: string) => {
       try {
-        dispatch(setLoading(true))
+        setIsDeleting(true)
         const response = await deleteContent(postId)
 
         if (response.data.status === false) {
@@ -151,7 +152,7 @@ export default function PostListPage() {
         dispatch(setError(errorMsg))
         toast.error(errorMsg)
       } finally {
-        dispatch(setLoading(false))
+        setIsDeleting(false)
       }
     },
     [dispatch, getPostContents, selectedContentType?.id]
@@ -231,43 +232,46 @@ export default function PostListPage() {
           </TableHeader>
           <TableBody>
             {posts.length > 0 ? (
-              posts.slice((page - 1) * 25, page * 25).map((post) => (
-                <TableRow key={post.id}>
-                  <TableCell className='font-medium max-w-[200px] truncate'>
-                    {post.data.title}
-                  </TableCell>
-                  <TableCell>{post.data.author}</TableCell>
-                  <TableCell className='capitalize'>
-                    {contentTypes.find((type) => type.id === post.type_id)
-                      ?.name || post.type_id}
-                  </TableCell>
-                  <TableCell className='capitalize'>{post.status}</TableCell>
-                  <TableCell>
-                    {format(new Date(post.created_at), 'dd MMMM yyyy')}
-                  </TableCell>
-                  <TableCell>
-                    <div className='flex items-center gap-4'>
-                      <Link href={`/dashboard/${post.id}`}>
+              posts.slice((page - 1) * 25, page * 25).map((post) => {
+                console.log('Post:', post)
+                return (
+                  <TableRow key={post.id}>
+                    <TableCell className='font-medium max-w-[200px] truncate'>
+                      {post.title}
+                    </TableCell>
+                    <TableCell>{post.author}</TableCell>
+                    <TableCell className='capitalize'>
+                      {contentTypes.find((type) => type.id === post.type_id)
+                        ?.name || post.type_id}
+                    </TableCell>
+                    <TableCell className='capitalize'>{post.status}</TableCell>
+                    <TableCell>
+                      {format(new Date(post.created_at), 'dd MMMM yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex items-center gap-4'>
+                        <Link href={`/dashboard/${post.id}`}>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='text-muted-foreground hover:text-foreground'
+                          >
+                            <FiEdit2 className='h-4 w-4' />
+                          </Button>
+                        </Link>
                         <Button
                           variant='ghost'
                           size='sm'
-                          className='text-muted-foreground hover:text-foreground'
+                          onClick={() => handleDeleteModal(post)}
+                          className='text-muted-foreground hover:text-destructive focus:text-destructive'
                         >
-                          <FiEdit2 className='h-4 w-4' />
+                          <FiTrash2 className='h-4 w-4' />
                         </Button>
-                      </Link>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => handleDeleteModal(post)}
-                        className='text-muted-foreground hover:text-destructive focus:text-destructive'
-                      >
-                        <FiTrash2 className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className='text-center'>
@@ -348,9 +352,10 @@ export default function PostListPage() {
             <Button
               variant='destructive'
               onClick={() => postToDelete && deleteContentFunc(postToDelete.id)}
+              disabled={isDeleting}
               className='w-full sm:w-auto'
             >
-              {loading ? (
+              {isDeleting ? (
                 <span className='flex items-center gap-2'>
                   <span className='h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin'></span>
                   Deleting...

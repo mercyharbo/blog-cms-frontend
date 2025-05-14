@@ -1,4 +1,5 @@
-import { ContentType, Post } from '@/types/content'
+import { ContentType } from '@/types/content'
+import { Post } from '@/types/post'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 interface ContentState {
