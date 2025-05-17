@@ -69,6 +69,9 @@ export interface UserProfile {
     last_name: string
     avatar_url: string
     bio: string
+    role: string
+    username: string
+    is_annonymous: boolean
   }
 }
 

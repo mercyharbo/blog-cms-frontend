@@ -1,11 +1,13 @@
 'use client'
 
-import { postUserLogout } from '@/api/authReq'
+import { getUserProfile, postUserLogout } from '@/api/authReq'
+import { useAppDispatch } from '@/hooks/redux'
+import { setError, setLoading } from '@/store/features/contentSlice'
+import { setUserProfile } from '@/store/features/userSlice'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { BiCategory, BiLogOut } from 'react-icons/bi'
-import { FaUsers } from 'react-icons/fa'
+import { useEffect, useState } from 'react'
+import { BiLogOut } from 'react-icons/bi'
 import {
   IoCloseOutline,
   IoColorPalette,
@@ -21,8 +23,6 @@ import { Button } from './ui/button'
 
 const linksItems = [
   { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
-  { href: '/dashboard/categories', label: 'Categories', icon: <BiCategory /> },
-  { href: '/dashboard/authors', label: 'Authors', icon: <FaUsers /> },
   {
     href: '/dashboard/content-types',
     label: 'Content Types',
@@ -50,12 +50,34 @@ const settingsLinks = [
 
 export default function NavMenu() {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const cookiestore = new Cookies()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const toggleMenu = () => setIsOpen(!isOpen)
+
+  const getUserDetails = async () => {
+    try {
+      dispatch(setLoading(true))
+      const data = await getUserProfile()
+    
+      if (data.user) {
+        dispatch(setUserProfile(data.user))
+      }
+    } catch (error) {
+      toast.error('Failed to load settings')
+      console.error('Failed to load data:', error)
+      dispatch(setError('Failed to load user profile'))
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }
+
+  useEffect(() => {
+    getUserDetails()
+  }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUserLogout = async () => {
     setIsLoggingOut(true)
@@ -108,7 +130,7 @@ export default function NavMenu() {
           </button>
         </div>
 
-        <div className='flex-1 flex flex-col gap-8'>
+        <div className='flex-1 flex flex-col gap-8 lg:pt-16'>
           <div className='flex flex-col gap-4'>
             <span className='text-sm font-medium text-gray-400 uppercase tracking-wider'>
               manage

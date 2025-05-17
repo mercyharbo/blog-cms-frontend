@@ -57,7 +57,7 @@ type PostPayload = CreatePayload & { type_id: string }
 const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   slug: z.string(),
-  author: z.string().min(1, 'Author is required'),
+  // author: z.string().min(1, 'Author is required'),
   content: z.string().min(1, 'Content is required'),
   status: z.enum(['draft', 'published', 'scheduled']),
   scheduled_at: z.string().nullable().optional(),
@@ -111,13 +111,12 @@ export default function PostForm({
   onSuccess,
 }: PostFormProps) {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const { contentTypes } = useAppSelector((state) => state.content)
-  const dispatch = useAppDispatch()
-
-  console.log('initialData', initialData)
+  const { profile } = useAppSelector((state) => state.user)
 
   const contentTypeReq = async () => {
     dispatch(setLoading(true))
@@ -158,7 +157,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
     defaultValues: {
       title: getPostValue(initialData, 'title'),
       slug: getPostValue(initialData, 'slug'),
-      author: getPostValue(initialData, 'author'),
+      // author: getPostValue(initialData, 'author'),
       content: getPostValue(initialData, 'content'),
       status: initialData?.status || 'draft',
       scheduled_at: initialData?.scheduled_at ?? null,
@@ -213,7 +212,11 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
         title: formData.title,
         slug: formData.slug,
         content: formData.content.replace(/\n/g, ''), // Remove extra newlines
-        author: formData.author,
+        author:
+          profile?.profile.is_annonymous !== false
+            ? profile?.profile.username ?? 'Unknown'
+            : 'Anonymous',
+
         cover_image: {
           url: formData.cover_image.url,
           alt: formData.cover_image.alt || formData.title, // Use title as fallback for alt
@@ -238,7 +241,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
         }
 
         const data = await updateContent(initialData.id, payload)
-        console.log('data', data)
+
         if (data.data.status === false) {
           toast.error(data.data.message)
           return
@@ -254,7 +257,10 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
           title: payload.title,
           slug: payload.slug,
           content: payload.content,
-          author: payload.author,
+          author:
+            profile?.profile.is_annonymous !== false
+              ? profile?.profile.username ?? 'Unknown'
+              : 'Anonymous',
           cover_image: payload.cover_image,
           reading_time: payload.reading_time,
           tags: payload.tags,
@@ -266,8 +272,8 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
 
         const data = await createContent(payload.type_id, contentPayload)
 
-        if (data.data.error) {
-          toast.error(data.data.error)
+        if (data.data.status === false) {
+          toast.error(data.data.message)
           return
         }
         toast.success('Post created successfully')
@@ -340,7 +346,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
               </FormItem>
             )}
           />
-          <FormField
+          {/* <FormField
             control={form.control}
             name='author'
             render={({ field }) => (
@@ -352,7 +358,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
           <FormField
             control={form.control}
             name='tags'
@@ -432,7 +438,12 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                     <div className='flex items-center gap-5 w-full'>
                       <select
                         {...field}
-                        className='w-[90%] px-2 h-12 border rounded-md dark:bg-black dark:text-white'
+                        className={cn(
+                          'px-2 h-12 border rounded-md dark:bg-black dark:text-white',
+                          profile?.profile.role === 'admin'
+                            ? 'w-full'
+                            : 'w-[90%]'
+                        )}
                       >
                         <option value=''>Select a type</option>
                         {contentTypes?.map((type) => (
@@ -457,11 +468,13 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                 </FormItem>
               )}
             />{' '}
-            <CreateContentTypeDialog
-              open={showDialog}
-              onOpenChange={setShowDialog}
-              onSuccess={contentTypeReq}
-            />
+            {profile?.profile.role === 'admin' && (
+              <CreateContentTypeDialog
+                open={showDialog}
+                onOpenChange={setShowDialog}
+                onSuccess={contentTypeReq}
+              />
+            )}
           </div>
           <FormField
             control={form.control}

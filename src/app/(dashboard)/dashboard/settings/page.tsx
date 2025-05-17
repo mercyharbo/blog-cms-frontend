@@ -1,6 +1,6 @@
 'use client'
 
-import { getUserProfile, updateUserProfile } from '@/api/authReq'
+import { updateUserProfile } from '@/api/authReq'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav'
 import { Button } from '@/components/ui/button'
@@ -17,12 +17,9 @@ import PageLoadingSpinner from '@/components/ui/PageLoadingSpinner'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import {
-  setError,
-  setLoading,
-  setUserProfile,
-} from '@/store/features/userSlice'
-import { useEffect, useState } from 'react'
+import { setUserProfile } from '@/store/features/userSlice'
+import { useState } from 'react'
+import { CiCamera } from 'react-icons/ci'
 import { toast } from 'react-toastify'
 
 export default function GeneralSettingsPage() {
@@ -40,27 +37,6 @@ export default function GeneralSettingsPage() {
     })
   }
 
-  const getUserDetails = async () => {
-    try {
-      dispatch(setLoading(true))
-      const data = await getUserProfile()
-      console.log('User data:', data)
-      if (data.user) {
-        dispatch(setUserProfile(data.user))
-      }
-    } catch (error) {
-      toast.error('Failed to load settings')
-      console.error('Failed to load data:', error)
-      dispatch(setError('Failed to load user profile'))
-    } finally {
-      dispatch(setLoading(false))
-    }
-  }
-
-  useEffect(() => {
-    getUserDetails()
-  }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!profile) return
@@ -72,6 +48,7 @@ export default function GeneralSettingsPage() {
         last_name: profile.profile.last_name,
         bio: profile.profile.bio,
         avatar_url: profile.profile.avatar_url || '',
+        username: profile.profile.username,
       }
 
       const data = await updateUserProfile(profileData)
@@ -152,14 +129,36 @@ export default function GeneralSettingsPage() {
                 onSubmit={handleProfileUpdate}
                 className='flex flex-col gap-8 w-full'
               >
-                <Avatar className='w-24 h-24'>
-                  <AvatarImage
-                    src={imagePreview || profile?.profile.avatar_url || ''}
-                    className='object-cover'
-                    alt='Profile Picture'
+                <div className='relative w-24 h-24'>
+                  <Avatar className='w-24 h-24'>
+                    <AvatarImage
+                      src={imagePreview || profile?.profile.avatar_url || ''}
+                      className='object-cover'
+                      alt='Profile Picture'
+                    />
+                    <AvatarFallback>
+                      {profile?.profile.first_name}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {/* Camera Icon Overlay */}
+                  <label
+                    htmlFor='avatar-upload'
+                    className='absolute top-1 right-1 bg-white/80 p-1 rounded-full shadow cursor-pointer hover:bg-white'
+                  >
+                    <CiCamera className='w-4 h-4 text-gray-700' />
+                  </label>
+
+                  {/* Hidden File Input */}
+                  <input
+                    id='avatar-upload'
+                    type='file'
+                    accept='image/*'
+                    className='hidden'
+                    disabled={isUpdating}
+                    onChange={handleImageChange}
                   />
-                  <AvatarFallback>{profile?.profile.first_name}</AvatarFallback>
-                </Avatar>
+                </div>
 
                 <div className='grid grid-cols-2 gap-4'>
                   <div className='space-y-2'>
@@ -202,15 +201,38 @@ export default function GeneralSettingsPage() {
                   </div>
                 </div>
 
-                <div className='space-y-2'>
-                  <Label htmlFor='email'>Email</Label>
-                  <Input
-                    id='email'
-                    type='email'
-                    value={profile?.email || ''}
-                    disabled={true}
-                    className='bg-gray-50'
-                  />
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-5 w-full'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='email'>Email</Label>
+                    <Input
+                      id='email'
+                      type='email'
+                      value={profile?.email || ''}
+                      disabled={true}
+                      className='bg-gray-50'
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='email'>Username</Label>
+                    <Input
+                      id='username'
+                      type='text'
+                      value={profile?.profile.username || ''}
+                      onChange={(e) =>
+                        dispatch(
+                          setUserProfile({
+                            ...profile!,
+                            profile: {
+                              ...profile!.profile,
+                              username: e.target.value,
+                            },
+                          })
+                        )
+                      }
+                      disabled={isUpdating}
+                      className='bg-gray-50'
+                    />
+                  </div>
                 </div>
 
                 <div className='space-y-2'>
@@ -236,7 +258,7 @@ export default function GeneralSettingsPage() {
                   />
                 </div>
 
-                <div className='space-y-2'>
+                {/* <div className='space-y-2'>
                   <Label htmlFor='avatar'>Profile Picture</Label>
                   <Input
                     id='avatar'
@@ -246,7 +268,7 @@ export default function GeneralSettingsPage() {
                     disabled={isUpdating}
                     onChange={handleImageChange}
                   />
-                </div>
+                </div> */}
 
                 <Button type='submit' disabled={isUpdating}>
                   {isUpdating ? 'Updating...' : 'Update Profile'}

@@ -60,6 +60,7 @@ export default function PostListPage() {
 
   const getPostContents = useCallback(
     async (contentTypeId?: string) => {
+      dispatch(setLoading(true))
       try {
         const response = await getContent(contentTypeId)
 
@@ -79,6 +80,8 @@ export default function PostListPage() {
         }
         dispatch(setError(errorMsg))
         toast.error(errorMsg)
+      } finally {
+        dispatch(setLoading(false))
       }
     },
     [dispatch]
