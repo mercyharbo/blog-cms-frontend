@@ -1,8 +1,7 @@
 'use client'
 
-import { postUserRegister } from '@/api/authReq'
+import { createClient } from '@/lib/client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { DiIe } from 'react-icons/di'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
@@ -11,7 +10,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 
 export default function SignupPage() {
-  const router = useRouter()
+  const supabase = createClient()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,47 +18,39 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showVerificationMessage, setShowVerificationMessage] = useState(false)
 
-  /**
-   * The handleSignup function is an asynchronous function that handles form submission for user
-   * registration, displaying success or error messages accordingly.
-   * @param e - The parameter `e` in the `handleSignup` function is of type
-   * `React.FormEvent<HTMLFormElement>`. This parameter represents the form event that is triggered when
-   * the form is submitted. In this case, the function is handling the form submission for a signup form
-   * in a React application.
-   */
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const data = await postUserRegister(email, password)
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${location.origin}/verify?type=signup`,
+        },
+      })
 
-      if (data?.error) {
-        toast.error(data.error)
+      if (error) {
+        toast.error(error.message)
       } else if (data) {
         setShowVerificationMessage(true)
-        toast.success('Account created successfully!')
-        setTimeout(() => {
-          router.push('/')
-        }, 30000)
+        toast.success('Please check your email to verify your account')
       }
-    } catch (error) {
-      let errorMsg = 'An error occurred while fetching content types'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
-
-      toast.error(errorMsg)
+    } catch (error: Error | unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while sending reset link'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className='min-h-screen px-5 flex items-center justify-center bg-gray-50 dark:bg-gray-900'>
-      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:w-2/5 border border-gray-100 dark:border-gray-700'>
+    <main className='min-h-screen px-5 flex items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:max-w-xl border border-gray-100 dark:border-gray-700'>
         <div className='flex flex-col items-center justify-center gap-3 w-full'>
           <div className='w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center'>
             <DiIe />
@@ -160,8 +151,18 @@ export default function SignupPage() {
               Sign in
             </Link>
           </p>
+
+          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+            Forgot your password?{' '}
+            <Link
+              href='/forget-password'
+              className='font-medium text-primary hover:text-primary/90 transition-colors'
+            >
+              Reset it
+            </Link>
+          </p>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

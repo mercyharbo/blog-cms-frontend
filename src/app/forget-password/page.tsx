@@ -1,9 +1,9 @@
 'use client'
 
-import { forgetPassword } from '@/api/authReq'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { createClient } from '@/lib/client'
 import Link from 'next/link'
 import { useState } from 'react'
 import { DiIe } from 'react-icons/di'
@@ -13,30 +13,40 @@ export default function ForgetPassword() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [isEmailSent, setIsEmailSent] = useState(false)
+  const supabase = createClient()
 
   const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
+
     try {
-      const response = await forgetPassword(email)
-      if (response.status === false) {
-        toast.error(response.message)
-        return
-      } else if (response.status === true) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${location.origin}/reset-password`,
+      })
+
+      if (error) {
+        toast.error(error.message)
+      } else {
         setIsEmailSent(true)
-        toast.success(response.message)
-        setEmail('')
+        toast.success('Password reset link sent! Please check your email.')
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 3000)
       }
-    } catch (error) {
-      console.error('Error sending reset link:', error)
+    } catch (error: Error | unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while sending reset link'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className='min-h-screen px-5 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
-      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:w-2/5 border border-gray-100 dark:border-gray-700'>
+    <main className='min-h-screen px-5 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:max-w-xl border border-gray-100 dark:border-gray-700'>
         <div className='flex flex-col items-center justify-center gap-3 w-full'>
           <div className='w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center'>
             <DiIe />
@@ -97,6 +107,6 @@ export default function ForgetPassword() {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

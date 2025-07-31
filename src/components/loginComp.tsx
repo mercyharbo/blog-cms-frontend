@@ -57,8 +57,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='min-h-screen px-5 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
-      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:w-2/5 border border-gray-100 dark:border-gray-700'>
+    <main className='min-h-screen px-5 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900'>
+      <div className='bg-white dark:bg-gray-800 p-8 lg:p-10 rounded-2xl shadow-lg w-full flex flex-col items-center gap-6 lg:max-w-xl border border-gray-100 dark:border-gray-700'>
         <div className='flex flex-col items-center justify-center gap-3 w-full'>
           <div className='w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center'>
             <DiIe />
@@ -143,7 +143,6 @@ export default function LoginPage() {
           </Button>
         </form>
         <div className='flex flex-col justify-center items-center gap-4 text-sm'>
-          {' '}
           <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
             Don&apos;t have an account?{' '}
             <Link
@@ -153,9 +152,17 @@ export default function LoginPage() {
               Create an account
             </Link>
           </p>
-         
+          <p className='text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+            Forgot your password?{' '}
+            <Link
+              href='/forget-password'
+              className='font-medium text-primary hover:text-primary/90 transition-colors'
+            >
+              Forgot Password
+            </Link>
+          </p>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

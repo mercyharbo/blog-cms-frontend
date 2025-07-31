@@ -31,9 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Don't check auth for these paths
     if (
-      path.startsWith('/auth/reset-password') ||
+      path.startsWith('/reset-password') ||
       path === '/signup' ||
       path === '/forget-password'
+      || path === '/verify'
     ) {
       return true
     }
