@@ -2,7 +2,6 @@
 
 import NavHeaderComp from '@/components/nav-header'
 import NavMenu from '@/components/NavMenu'
-import { AuthProvider } from '@/context/AuthContext'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
@@ -21,9 +20,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <AuthProvider>
-      <DashboardContent>{children}</DashboardContent>
-    </AuthProvider>
-  )
+  return <DashboardContent>{children}</DashboardContent>
 }

@@ -1,5 +1,4 @@
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
-import { AuthProvider } from '@/context/AuthContext'
 import { Providers } from '@/store/provider'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
@@ -89,21 +88,19 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <AuthProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-            <ToastContainer
-              position='top-right'
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme='light'
-            />
-          </AuthProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+          <ToastContainer
+            position='top-right'
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme='light'
+          />
         </Providers>
       </body>
     </html>

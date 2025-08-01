@@ -1,8 +1,8 @@
 'use client'
 
-import { createContent, getContentTypes, updateContent } from '@/api/contentReq'
+import { createContent, updateContent } from '@/api/contentReq'
+import { fetcherWithAuth } from '@/api/fetcher'
 import CreateContentTypeDialog from '@/components/content-types/CreateContentTypeDialog'
-import RichTextEditor from '@/components/editor/RichTextEditor'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -17,21 +17,19 @@ import { ImageUpload } from '@/components/ui/image-upload'
 import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/ui/tag-input'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { cn } from '@/lib/utils'
-import {
-  setContentTypes,
-  setError,
-  setLoading,
-} from '@/store/features/contentSlice'
+import { cn, useToken } from '@/lib/utils'
+import { setContentTypes, setError } from '@/store/features/contentSlice'
 import { Post, PostData, PostFormProps, SinglePost } from '@/types/post'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { BiPlus } from 'react-icons/bi'
 import { toast } from 'react-toastify'
 import slugify from 'slugify'
+import useSWR from 'swr'
 import * as z from 'zod'
+import RichTextEditor from '../editor/RichTextEditor'
 
 interface CreatePayload {
   title: string
@@ -111,6 +109,7 @@ export default function PostForm({
   onSuccess,
 }: PostFormProps) {
   const router = useRouter()
+  const token = useToken()
   const dispatch = useAppDispatch()
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -118,33 +117,30 @@ export default function PostForm({
   const { contentTypes } = useAppSelector((state) => state.content)
   const { profile } = useAppSelector((state) => state.user)
 
-  const contentTypeReq = async () => {
-    dispatch(setLoading(true))
-
-    try {
-      const response = await getContentTypes()
-      if (response.status === false) {
-        dispatch(setError(response.message))
-        toast.error(response.message)
-      } else if (response.contentTypes) {
-        dispatch(setContentTypes(response.contentTypes))
-      }
-    } catch (error) {
-      let errorMsg = 'An error occurred while fetching content types'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
-      dispatch(setError(errorMsg))
-      toast.error(errorMsg)
+  /* The `const { mutate } = useSWR(...)` statement is using the `useSWR` hook from the SWR library in
+   React. Here's what it's doing: */
+  const { mutate } = useSWR(
+    token
+      ? [
+          `${process.env.NEXT_PUBLIC_API_URL}/api/content/types`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ]
+      : null,
+    fetcherWithAuth,
+    {
+      onError: (err) => {
+        dispatch(setError(err.message || 'Failed to fetch content types'))
+        toast.error(err.message || 'Failed to fetch content types')
+      },
+      onSuccess: (data) => {
+        dispatch(setContentTypes(data.contentTypes || []))
+      },
     }
-  }
-
-  useEffect(() => {
-    contentTypeReq()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch])
+  )
 
   /* The above code snippet is using the useForm hook from a form library in a TypeScript React
 application. It is initializing a form for creating a post with default values provided. The form is
@@ -298,55 +294,53 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
   return (
     <main
       className={cn(
-        'flex flex-col items-center gap-5 p-5 mx-auto w-full ',
-        isEditing ? 'w-full' : 'lg:w-3/4'
+        ' w-full overflow-y-auto scrollbar-hide p-5 dark:bg-background',
+        isEditing ? 'h-full' : 'h-[calc(100vh-4rem)]'
       )}
     >
-      <h1
-        className={cn(
-          'text-3xl font-bold flex justify-start items-start w-full',
-          isEditing ? 'w-full' : 'lg:w-3/4 text-left py-10'
-        )}
-      >
-        {title ? title : 'New Post'}
-      </h1>
-
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(handleSubmit)}
+      <div className='max-w-4xl w-full mx-auto'>
+        <h1
           className={cn(
-            'w-full flex flex-col gap-5 overflow-hidden',
-            isEditing ? 'w-full' : 'lg:w-3/4'
+            'text-3xl font-bold flex justify-start items-start w-full',
+            isEditing ? 'w-full' : 'lg:w-3/4 text-left py-10'
           )}
         >
-          <FormField
-            control={form.control}
-            name='title'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <Input {...field} onChange={handleTitleChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='slug'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Slug</FormLabel>
-                <FormControl>
-                  <Input {...field} readOnly />
-                </FormControl>
-                <FormDescription>Auto-generated from title</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {/* <FormField
+          {title ? title : 'New Post'}
+        </h1>
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className={cn('space-y-5')}
+          >
+            <FormField
+              control={form.control}
+              name='title'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input {...field} onChange={handleTitleChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='slug'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug</FormLabel>
+                  <FormControl>
+                    <Input {...field} readOnly />
+                  </FormControl>
+                  <FormDescription>Auto-generated from title</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* <FormField
             control={form.control}
             name='author'
             render={({ field }) => (
@@ -359,227 +353,228 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
               </FormItem>
             )}
           /> */}
-          <FormField
-            control={form.control}
-            name='tags'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tags</FormLabel>
-                <FormControl>
-                  <TagInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder='Add tags...'
-                  />
-                </FormControl>
-                <FormDescription>Press enter to add tags</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className='space-y-4'>
             <FormField
               control={form.control}
-              name='status'
+              name='tags'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>Tags</FormLabel>
                   <FormControl>
-                    <select
-                      {...field}
-                      className='w-full p-2 border rounded-md dark:bg-black dark:text-white'
-                      onChange={(e) => {
-                        field.onChange(e.target.value)
-                        if (e.target.value !== 'scheduled') {
-                          form.setValue('scheduled_at', null)
-                        }
-                      }}
-                    >
-                      <option value='draft'>Draft</option>
-                      <option value='published'>Published</option>
-                      <option value='scheduled'>Scheduled</option>
-                    </select>
+                    <TagInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder='Add tags...'
+                    />
+                  </FormControl>
+                  <FormDescription>Press enter to add tags</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className='space-y-4'>
+              <FormField
+                control={form.control}
+                name='status'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className='w-full p-2 border dark:border-gray-700 rounded-lg dark:bg-primary-foreground'
+                        onChange={(e) => {
+                          field.onChange(e.target.value)
+                          if (e.target.value !== 'scheduled') {
+                            form.setValue('scheduled_at', null)
+                          }
+                        }}
+                      >
+                        <option value='draft'>Draft</option>
+                        <option value='published'>Published</option>
+                        <option value='scheduled'>Scheduled</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {form.watch('status') === 'scheduled' && (
+                <FormField
+                  control={form.control}
+                  name='scheduled_at'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Schedule Date and Time</FormLabel>
+                      <FormControl>
+                        <Input
+                          type='datetime-local'
+                          {...field}
+                          value={field.value || ''}
+                          min={new Date().toISOString().slice(0, 16)}
+                          className='w-full p-2 border rounded-md'
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Select when you want this post to be published
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <FormField
+                control={form.control}
+                name='postType'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Post Type</FormLabel>{' '}
+                    <FormControl>
+                      <div className='flex items-center gap-5 w-full'>
+                        <select
+                          {...field}
+                          className={cn(
+                            'px-2 h-12 border dark:border-gray-700 rounded-lg dark:bg-primary-foreground ',
+                            profile?.profile.role === 'admin'
+                              ? 'w-full'
+                              : 'w-[90%]'
+                          )}
+                        >
+                          <option value=''>Select a type</option>
+                          {contentTypes?.map((type) => (
+                            <option key={type.id} value={type.id}>
+                              {type.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        <Button
+                          size={'sm'}
+                          variant={'outline'}
+                          onClick={() => setShowDialog(true)}
+                          type='button'
+                          className='h-12 w-[10%] dark:border-gray-700 hover:text-white flex items-center justify-center'
+                        >
+                          <BiPlus />
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {profile?.profile.role === 'admin' && (
+                <CreateContentTypeDialog
+                  open={showDialog}
+                  onOpenChange={setShowDialog}
+                />
+              )}
+            </div>
+            <FormField
+              control={form.control}
+              name='meta_title'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meta Title</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {form.watch('status') === 'scheduled' && (
-              <FormField
-                control={form.control}
-                name='scheduled_at'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Schedule Date and Time</FormLabel>
-                    <FormControl>
-                      <Input
-                        type='datetime-local'
-                        {...field}
-                        value={field.value || ''}
-                        min={new Date().toISOString().slice(0, 16)}
-                        className='w-full p-2 border rounded-md'
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Select when you want this post to be published
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
             <FormField
               control={form.control}
-              name='postType'
+              name='meta_keywords'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Post Type</FormLabel>{' '}
+                  <FormLabel>Meta Keywords</FormLabel>
                   <FormControl>
-                    <div className='flex items-center gap-5 w-full'>
-                      <select
-                        {...field}
-                        className={cn(
-                          'px-2 h-12 border rounded-md dark:bg-black dark:text-white',
-                          profile?.profile.role === 'admin'
-                            ? 'w-full'
-                            : 'w-[90%]'
-                        )}
-                      >
-                        <option value=''>Select a type</option>
-                        {contentTypes?.map((type) => (
-                          <option key={type.id} value={type.id}>
-                            {type.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      <Button
-                        size={'sm'}
-                        variant={'outline'}
-                        onClick={() => setShowDialog(true)}
-                        type='button'
-                        className='h-12 w-[10%] flex items-center justify-center'
-                      >
-                        <BiPlus />
-                      </Button>
-                    </div>
+                    <TagInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder='Add meta keywords...'
+                    />
+                  </FormControl>
+                  <FormDescription className='text-gray-400'>
+                    Press enter to add keywords
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='reading_time'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reading Time (minutes)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value || 0}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
-            />{' '}
-            {profile?.profile.role === 'admin' && (
-              <CreateContentTypeDialog
-                open={showDialog}
-                onOpenChange={setShowDialog}
-                onSuccess={contentTypeReq}
-              />
-            )}
-          </div>
-          <FormField
-            control={form.control}
-            name='meta_title'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Meta Title</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='meta_keywords'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Meta Keywords</FormLabel>
-                <FormControl>
-                  <TagInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder='Add meta keywords...'
-                  />
-                </FormControl>
-                <FormDescription>Press enter to add keywords</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='reading_time'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Reading Time (minutes)</FormLabel>
-                <FormControl>
-                  <Input
-                    type='number'
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    value={field.value || 0}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='cover_image'
-            render={({ field: { onChange, value } }) => (
-              <FormItem>
-                <FormLabel>Cover Image</FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    value={value || null}
-                    onChange={(imageValue) => onChange(imageValue)}
-                    onRemove={() => onChange(null)}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Upload an image (max 10MB). Supported formats: PNG, JPG, JPEG,
-                  GIF, WEBP
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='content'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Content</FormLabel>
-                <FormControl>
-                  <RichTextEditor
-                    content={field.value}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className='flex justify-end gap-4'>
-            <Button type='button' variant='outline'>
-              Cancel
-            </Button>
-            <Button
-              type='submit'
-              // disabled={isSubmitting || !isFormValid || !isDirty}
-              className={`cursor-pointer ${
-                isSubmitting || !isFormValid || !isDirty
-                  ? 'cursor-not-allowed opacity-50'
-                  : ''
-              }`}
-            >
-              {isSubmitting ? 'Saving...' : 'Save Post'}
-            </Button>
-          </div>
-        </form>
-      </Form>
+            />
+            <FormField
+              control={form.control}
+              name='cover_image'
+              render={({ field: { onChange, value } }) => (
+                <FormItem>
+                  <FormLabel>Cover Image</FormLabel>
+                  <FormControl>
+                    <ImageUpload
+                      value={value || null}
+                      onChange={(imageValue) => onChange(imageValue)}
+                      onRemove={() => onChange(null)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='content'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Content</FormLabel>
+                  <FormControl>
+                    <RichTextEditor
+                      content={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className='flex justify-end gap-4'>
+              <Button
+                type='button'
+                variant='outline'
+                className='hover:text-white'
+              >
+                Cancel
+              </Button>
+              <Button
+                type='submit'
+                className={`cursor-pointer ${
+                  isSubmitting || !isFormValid || !isDirty
+                    ? 'cursor-not-allowed opacity-50'
+                    : ''
+                }`}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Post'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </main>
   )
 }

@@ -1,4 +1,3 @@
-import { fetchApi } from '@/lib/fetch'
 import { UserProfile } from '@/types/auth'
 import Cookies from 'universal-cookie'
 
@@ -56,28 +55,6 @@ export async function postUserLogout() {
   return response.json()
 }
 
-export async function postUserRegister(email: string, password: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    }
-  )
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to register')
-  }
-
-  return data
-}
-
 export async function postUserResetPassword(
   token: string,
   newPassword: string
@@ -102,13 +79,6 @@ export async function postUserResetPassword(
   }
 
   return data
-}
-
-export async function getUserProfile() {
-  return fetchApi('/api/auth/me', {
-    method: 'GET',
-    requireAuth: true,
-  })
 }
 
 export async function updateUserProfile(
@@ -158,28 +128,6 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 
   if (!response.ok) {
     throw new Error(data.error || 'Failed to change password')
-  }
-
-  return data
-}
-
-export async function forgetPassword(email: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ email }),
-    }
-  )
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to send reset password email')
   }
 
   return data

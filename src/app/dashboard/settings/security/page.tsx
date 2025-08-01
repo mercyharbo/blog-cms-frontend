@@ -44,10 +44,10 @@ export default function SecurityPage() {
   }
 
   return (
-    <div className='container max-w-4xl py-6 space-y-8'>
+    <main className='py-5 m-auto w-full space-y-5'>
       <BreadcrumbNav />
 
-      <div className='space-y-6'>
+      <div className='w-[98%] m-auto h-[calc(100vh-9rem)] dark:bg-background rounded-lg border dark:border-gray-700 p-5 space-y-5 overflow-y-auto scrollbar-hide'>
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>
             Security Settings
@@ -287,6 +287,6 @@ export default function SecurityPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
@@ -59,10 +58,10 @@ export default function AppearancePage() {
   }
 
   return (
-    <div className='container max-w-4xl py-6 space-y-8'>
+    <div className='m-auto w-full space-y-5 py-3'>
       <BreadcrumbNav />
 
-      <div className='space-y-6'>
+      <div className='w-[98%] m-auto h-[calc(100vh-9rem)] dark:bg-background rounded-lg border dark:border-gray-700 p-5 space-y-5 overflow-y-auto scrollbar-hide'>
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>Appearance</h2>
           <p className='text-muted-foreground'>
@@ -70,10 +69,8 @@ export default function AppearancePage() {
           </p>
         </div>
 
-        <Separator />
-
-        <div className='grid gap-6'>
-          <Card>
+        <div className='space-y-5'>
+          <Card className=''>
             <CardHeader>
               <CardTitle>Theme</CardTitle>
               <CardDescription>
@@ -91,7 +88,9 @@ export default function AppearancePage() {
                 <Label
                   htmlFor='light'
                   className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-background p-4 hover:bg-accent hover:text-accent-foreground ${
-                    theme === 'light' ? 'border-primary' : ''
+                    theme === 'light'
+                      ? 'border-primary'
+                      : 'dark:border-gray-600'
                   } cursor-pointer`}
                 >
                   <RadioGroupItem
@@ -127,7 +126,7 @@ export default function AppearancePage() {
                 <Label
                   htmlFor='dark'
                   className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-background p-4 hover:bg-accent hover:text-accent-foreground ${
-                    theme === 'dark' ? 'border-primary' : ''
+                    theme === 'dark' ? 'border-primary' : 'dark:border-gray-600'
                   } cursor-pointer`}
                 >
                   <RadioGroupItem value='dark' id='dark' className='sr-only' />
@@ -151,7 +150,9 @@ export default function AppearancePage() {
                 <Label
                   htmlFor='system'
                   className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-background p-4 hover:bg-accent hover:text-accent-foreground ${
-                    theme === 'system' ? 'border-primary' : ''
+                    theme === 'system'
+                      ? 'border-primary'
+                      : 'dark:border-gray-600'
                   } cursor-pointer`}
                 >
                   <RadioGroupItem
@@ -184,7 +185,7 @@ export default function AppearancePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className=''>
             <CardHeader>
               <CardTitle>Animation & Motion</CardTitle>
               <CardDescription>
@@ -243,7 +244,7 @@ export default function AppearancePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className=''>
             <CardHeader>
               <CardTitle>Font Scaling</CardTitle>
               <CardDescription>

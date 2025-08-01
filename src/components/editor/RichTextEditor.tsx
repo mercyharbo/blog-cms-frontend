@@ -102,7 +102,7 @@ export default function RichTextEditor({
   }, [editor, content])
 
   return (
-    <div className='min-h-[400px] border rounded-lg overflow-hidden flex flex-col'>
+    <div className='h-[300px] border dark:border-gray-700 rounded-lg overflow-hidden flex flex-col'>
       <EditorToolbar editor={editor} />
       <EditorContent
         editor={editor}

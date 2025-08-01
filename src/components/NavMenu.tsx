@@ -23,7 +23,7 @@ import Cookies from 'universal-cookie'
 import { Button } from './ui/button'
 
 export const linksItems = [
-  { href: '/dashboard', label: 'Posts', icon: <MdArticle /> },
+  { href: '/dashboard/contents', label: 'Posts', icon: <MdArticle /> },
   {
     href: '/dashboard/content-types',
     label: 'Content Types',
@@ -105,7 +105,7 @@ export default function NavMenu() {
   return (
     <nav
       className={cn(
-        'fixed top-0 left-0 min-h-screen w-4/5 -translate-x-full gap-10 bg-white dark:bg-background z-50 border-r border-gray-300 dark:border-gray-700 shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:w-64 lg:flex lg:flex-col lg:px-5 lg:py-10 '
+        'fixed top-0 left-0 h-screen w-4/5 -translate-x-full gap-10 bg-white dark:bg-background z-50 border-r border-gray-300 dark:border-gray-700 shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:w-64 lg:flex lg:flex-col lg:px-5 lg:py-10 '
       )}
     >
       <div className='flex items-center justify-between '>

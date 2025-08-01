@@ -24,7 +24,8 @@ import { FilterIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
-import { FiEdit2, FiTrash2 } from 'react-icons/fi'
+import { FaEye } from 'react-icons/fa'
+import { FiTrash2 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import useSWR from 'swr'
 import { Button } from '../ui/button'
@@ -78,12 +79,7 @@ export default function PostListPage() {
   is fetching data from an API endpoint based on the `token` and `selectedContentType` values. If
   the `token` is present, it constructs the API endpoint URL with the token for authorization. It
   then uses the `fetcherWithAuth` function to make the API request. */
-  const {
-    data: contentsData,
-    error,
-    isLoading: contentLoading,
-    mutate,
-  } = useSWR(
+  const { isLoading: contentLoading, mutate } = useSWR(
     token
       ? [
           selectedContentType?.id
@@ -110,11 +106,7 @@ export default function PostListPage() {
 
   /* The above code snippet is using the `useSWR` hook from the SWR library in a TypeScript React
   component. */
-  const {
-    data: contentTypesData,
-    error: contentTypeError,
-    isLoading: contentTypeLoading,
-  } = useSWR(
+  const { isLoading: contentTypeLoading } = useSWR(
     token
       ? [
           `${process.env.NEXT_PUBLIC_API_URL}/api/content/types`,
@@ -186,7 +178,7 @@ export default function PostListPage() {
     [dispatch, selectedContentType?.id]
   )
 
-  if (contentLoading || !posts) {
+  if (contentLoading || !posts || contentTypeLoading) {
     return <PageLoadingSpinner />
   }
 
@@ -245,9 +237,9 @@ export default function PostListPage() {
           </div>
         </CardHeader>
 
-        <CardContent className='flex flex-col space-y-5 overflow-y-auto'>
+        <CardContent className='flex flex-col space-y-5 overflow-y-auto scrollbar-hide'>
           <Table className='scrollbar-hide'>
-            <TableHeader className='dark:bg-gray-700'>
+            <TableHeader className='bg-muted text-muted-foreground'>
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Author</TableHead>
@@ -260,10 +252,7 @@ export default function PostListPage() {
             <TableBody>
               {posts?.length > 0 ? (
                 posts?.slice((page - 1) * 25, page * 25).map((post) => (
-                  <TableRow
-                    key={post.id}
-                    className='hover:bg-gray-100 dark:hover:bg-gray-700 dark:border-gray-700'
-                  >
+                  <TableRow key={post.id}>
                     <TableCell className='font-medium max-w-[200px] truncate'>
                       {post.title || 'Untitled'}
                     </TableCell>
@@ -284,9 +273,9 @@ export default function PostListPage() {
                     </TableCell>
                     <TableCell>
                       <div className='flex items-center gap-4'>
-                        <Link href={`/dashboard/${post.id}`}>
+                        <Link href={`/dashboard/contents/${post.id}`}>
                           <Button variant='ghost' size='sm' className=''>
-                            <FiEdit2 className='h-4 w-4' />
+                            <FaEye className='h-4 w-4' />
                           </Button>
                         </Link>
                         <Button

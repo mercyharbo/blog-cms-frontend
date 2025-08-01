@@ -29,7 +29,7 @@ export function TagInput({ value, onChange, placeholder }: TagInputProps) {
   }
 
   return (
-    <div className='border rounded-md p-2'>
+    <div className='border dark:border-gray-700 rounded-md p-2'>
       <div className='flex flex-wrap gap-2 mb-2'>
         {value.map((tag) => (
           <span
@@ -40,11 +40,11 @@ export function TagInput({ value, onChange, placeholder }: TagInputProps) {
             <Button
               type='button'
               variant='ghost'
-              size='sm'
-              className='h-auto p-0 hover:bg-transparent'
+              size='icon'
+              className='h-auto w-auto p-0 hover:bg-transparent'
               onClick={() => removeTag(tag)}
             >
-              <X className='h-4 w-4' />
+              <X />
             </Button>
           </span>
         ))}

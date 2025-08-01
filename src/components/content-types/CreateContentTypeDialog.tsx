@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  createContentType,
-  getContentTypes,
-  updateContentType,
-} from '@/api/contentReq'
+import { createContentType, updateContentType } from '@/api/contentReq'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppDispatch } from '@/hooks/redux'
-import { setContentTypes, setError } from '@/store/features/contentSlice'
+import { setError } from '@/store/features/contentSlice'
 import { Label } from '@radix-ui/react-label'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -53,13 +49,13 @@ export default function CreateContentTypeDialog({
     }
   }, [initialData])
 
-/**
- * The function `handleSubmit` handles the submission of a form for creating or updating a content
- * type, displaying success or error messages accordingly.
- * @returns The `handleSubmit` function returns nothing explicitly. It either executes the code within
- * the try block and catches any errors in the catch block, or it returns early if the `title` is not
- * provided.
- */
+  /**
+   * The function `handleSubmit` handles the submission of a form for creating or updating a content
+   * type, displaying success or error messages accordingly.
+   * @returns The `handleSubmit` function returns nothing explicitly. It either executes the code within
+   * the try block and catches any errors in the catch block, or it returns early if the `title` is not
+   * provided.
+   */
   const handleSubmit = async () => {
     if (!title) {
       toast.error('Title is required')
@@ -95,12 +91,9 @@ export default function CreateContentTypeDialog({
         setTitle('')
         setDescription('')
 
-        // Fetch updated content types
-        const updatedTypesResponse = await getContentTypes()
-        if (updatedTypesResponse.contentTypes) {
-          dispatch(setContentTypes(updatedTypesResponse.contentTypes))
-          onSuccess?.()
-        }
+        setTimeout(() => {
+          window.location.reload()
+        }, 2500)
       }
     } catch (error) {
       let errorMsg = `An error occurred while ${
@@ -120,7 +113,7 @@ export default function CreateContentTypeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex flex-col gap-5'>
+      <DialogContent className='flex flex-col gap-5 dark:bg-gray-700 dark:border-gray-600 bg-white'>
         <DialogHeader>
           <DialogTitle>Create New Content Type</DialogTitle>
           <DialogDescription>
@@ -134,6 +127,7 @@ export default function CreateContentTypeDialog({
               placeholder='e.g., Blog Post, News Article, etc.'
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className='dark:border-gray-600'
             />
           </div>
           <div className='flex flex-col gap-2 w-full'>
@@ -144,8 +138,9 @@ export default function CreateContentTypeDialog({
                 strict: true,
               })}
               disabled
+              className='dark:border-gray-600'
             />
-            <p className='text-sm'>Auto-generated from title</p>
+            <p className='text-sm text-gray-400'>Auto-generated from title</p>
           </div>
           <div className='flex flex-col gap-2 w-full'>
             <Label className='text-sm'>Description</Label>
@@ -153,6 +148,7 @@ export default function CreateContentTypeDialog({
               placeholder='Describe the purpose of this content type...'
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className='dark:border-gray-600'
             />
           </div>
         </div>
@@ -161,6 +157,7 @@ export default function CreateContentTypeDialog({
             type='button'
             variant='outline'
             onClick={() => onOpenChange(false)}
+            className='text-white hover:text-white hover:border-gray-primary'
           >
             Cancel
           </Button>{' '}

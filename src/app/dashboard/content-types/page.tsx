@@ -1,8 +1,16 @@
 'use client'
 
-import { deleteContentType, getContentTypes } from '@/api/contentReq'
+import { deleteContentType } from '@/api/contentReq'
+import { fetcherWithAuth } from '@/api/fetcher'
 import CreateContentTypeDialog from '@/components/content-types/CreateContentTypeDialog'
 import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -30,18 +38,17 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import {
-  setContentTypes,
-  setError,
-  setLoading,
-} from '@/store/features/contentSlice'
+import { useToken } from '@/lib/utils'
+import { setContentTypes, setError } from '@/store/features/contentSlice'
 import { format } from 'date-fns'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
+import useSWR from 'swr'
 
 export default function ContentTypes() {
+  const token = useToken()
   const dispatch = useAppDispatch()
   const [showDialog, setShowDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -56,42 +63,38 @@ export default function ContentTypes() {
   } | null>(null)
   const { contentTypes, loading } = useAppSelector((state) => state.content)
 
-  const handleOpenDialog = (type?: typeof selectedType) => {
-    setSelectedType(type || null)
-    setShowDialog(true)
-  }
-
-  const handleCloseDialog = () => {
-    setSelectedType(null)
-    setShowDialog(false)
-  }
-
-  const contentTypeReq = async () => {
-    dispatch(setLoading(true))
-
-    try {
-      const response = await getContentTypes()
-
-      if (response.status === false) {
-        dispatch(setError(response.message))
-        toast.error(response.message)
-      } else if (response.contentTypes) {
-        dispatch(setContentTypes(response.contentTypes))
-      }
-    } catch (error) {
-      let errorMsg = 'An error occurred while fetching content types'
-      if (error instanceof Error) {
-        errorMsg = error.message
-      } else if (typeof error === 'string') {
-        errorMsg = error
-      }
-      dispatch(setError(errorMsg))
-      toast.error(errorMsg)
-    } finally {
-      dispatch(setLoading(false))
+  /* The `const { mutate } = useSWR(...)` statement is using the `useSWR` hook from the SWR library in
+ React. Here's what it's doing: */
+  const { mutate } = useSWR(
+    token
+      ? [
+          `${process.env.NEXT_PUBLIC_API_URL}/api/content/types`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ]
+      : null,
+    fetcherWithAuth,
+    {
+      onError: (err) => {
+        dispatch(setError(err.message || 'Failed to fetch content types'))
+        toast.error(err.message || 'Failed to fetch content types')
+      },
+      onSuccess: (data) => {
+        dispatch(setContentTypes(data.contentTypes || []))
+      },
     }
-  }
+  )
 
+  /**
+   * The function `handleDeleteContentType` is an asynchronous function that handles the deletion of a
+   * content type, displaying success or error messages using toast notifications.
+   * @param {string} id - The `id` parameter in the `handleDeleteContentType` function is a string that
+   * represents the unique identifier of the content type that you want to delete. This identifier is
+   * used to specify which content type should be deleted when the function is called.
+   */
   const handleDeleteContenType = async (id: string) => {
     setIsDeleting(true)
     try {
@@ -103,7 +106,7 @@ export default function ContentTypes() {
       } else {
         toast.success(res.message)
         setTimeout(() => {
-          contentTypeReq()
+          mutate()
         }, 5000)
       }
     } catch (error) {
@@ -120,137 +123,155 @@ export default function ContentTypes() {
     }
   }
 
-  useEffect(() => {
-    contentTypeReq()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch])
+  const handleOpenDialog = (type?: typeof selectedType) => {
+    setSelectedType(type || null)
+    setShowDialog(true)
+  }
+
+  const handleCloseDialog = () => {
+    setSelectedType(null)
+    setShowDialog(false)
+  }
 
   if (loading) {
     return <PageLoadingSpinner />
   }
 
   return (
-    <main className='flex flex-col gap-8 w-full py-10'>
-      <header className='flex justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
-        <h1 className='lg:text-4xl text-2xl font-bold tracking-tight text-foreground'>
-          Content Types
-        </h1>
-        <div className='flex items-start gap-5 flex-col w-full lg:w-auto lg:items-center lg:flex-row md:flex-row'>
-          <Input
-            placeholder='Search...'
-            className='lg:w-[400px] md:w-[70%] w-full'
-          />
-          <Button
-            variant='default'
-            size='lg'
-            type='button'
-            onClick={() => handleOpenDialog()}
-            className='h-12 items-center gap-2 w-full lg:w-auto md:w-[30%]'
-          >
-            <BiPlus />
-            Create Content Type
-          </Button>
-        </div>
-        <CreateContentTypeDialog
-          open={showDialog}
-          onOpenChange={handleCloseDialog}
-          onSuccess={contentTypeReq}
-          initialData={selectedType}
-        />{' '}
-      </header>{' '}
-      <div className='rounded-xl border bg-card w-full overflow-auto'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Last Updated</TableHead>
-              <TableHead className='text-right'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>{' '}
-          <TableBody>
-            {contentTypes.length > 0 ? (
-              contentTypes.slice((page - 1) * 25, page * 25).map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell className='font-medium'>{type.title}</TableCell>
-                  <TableCell>{type.name}</TableCell>
-                  <TableCell>
-                    {format(new Date(type.updated_at), 'dd MMM yyyy, HH:mm')}
-                  </TableCell>
-                  <TableCell className='text-right'>
-                    <div className='flex items-center justify-end gap-4'>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => handleOpenDialog(type)}
-                        className='text-muted-foreground hover:text-foreground'
-                      >
-                        <FiEdit2 className='h-4 w-4' />
-                      </Button>{' '}
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => {
-                          setTypeToDelete(type.id)
-                          setShowDeleteDialog(true)
-                        }}
-                        disabled={loading}
-                        className='text-muted-foreground hover:text-destructive focus:text-destructive'
-                      >
-                        <FiTrash2 className='h-4 w-4' />
-                      </Button>
+    <main className='m-auto w-full'>
+      <Card className='dark:bg-background dark:border-gray-700 w-[98%] h-[calc(100dvh-7rem)] m-auto'>
+        <CardHeader className='justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
+          <div className='flex flex-col gap-1'>
+            <CardTitle className='text-xl font-semibold'>
+              Manage Content Types
+            </CardTitle>
+            <CardDescription>
+              View, search, and create structured content types to organize your
+              posts and data more effectively.
+            </CardDescription>
+          </div>
+
+          <div className='flex items-start gap-5 flex-col w-full lg:w-auto lg:items-center lg:flex-row md:flex-row'>
+            <Input
+              placeholder='Search content types...'
+              className='lg:w-[400px] md:w-[70%] w-full'
+            />
+            <Button
+              variant='default'
+              size='lg'
+              type='button'
+              onClick={() => handleOpenDialog()}
+              className='h-12 items-center gap-2 w-full lg:w-auto md:w-[30%]'
+            >
+              <BiPlus />
+              Create Content Type
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className='flex flex-col space-y-5 overflow-y-auto scrollbar-hide'>
+          <Table className='rounded-lg'>
+            <TableHeader className='bg-muted text-muted-foreground'>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Last Updated</TableHead>
+                <TableHead className='text-right'>Actions</TableHead>
+              </TableRow>
+            </TableHeader>{' '}
+            <TableBody>
+              {contentTypes.length > 0 ? (
+                contentTypes.slice((page - 1) * 25, page * 25).map((type) => (
+                  <TableRow key={type.id}>
+                    <TableCell className='font-medium'>{type.title}</TableCell>
+                    <TableCell>{type.name}</TableCell>
+                    <TableCell>
+                      {format(new Date(type.updated_at), 'dd MMM yyyy')}
+                    </TableCell>
+                    <TableCell className='text-right'>
+                      <div className='flex items-center justify-end gap-4'>
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => handleOpenDialog(type)}
+                          className='text-muted-foreground'
+                        >
+                          <FiEdit2 className='h-4 w-4' />
+                        </Button>{' '}
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => {
+                            setTypeToDelete(type.id)
+                            setShowDeleteDialog(true)
+                          }}
+                          disabled={loading}
+                          className='text-muted-foreground'
+                        >
+                          <FiTrash2 className='h-4 w-4' />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className='h-64 p-8'>
+                    <div className='flex flex-col items-center justify-center h-full text-muted-foreground'>
+                      <span className='text-lg font-medium'>
+                        No posts found
+                      </span>
+                      <span className='text-sm'>
+                        Try adjusting your filters or create a new content type.
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className='text-center'>
-                  No content types found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className='flex justify-center my-6'>
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href='#'
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                aria-disabled={page <= 1}
-              />
-            </PaginationItem>
-            {Array.from(
-              { length: Math.ceil(contentTypes.length / 25) },
-              (_, i) => i + 1
-            ).map((pageNumber) => (
-              <PaginationItem key={pageNumber}>
-                <PaginationLink
-                  href='#'
-                  onClick={() => setPage(pageNumber)}
-                  isActive={page === pageNumber}
-                >
-                  {pageNumber}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext
-                href='#'
-                onClick={() =>
-                  setPage((p) =>
-                    Math.min(Math.ceil(contentTypes.length / 25), p + 1)
-                  )
-                }
-                aria-disabled={page >= Math.ceil(contentTypes.length / 25)}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+
+          {contentTypes.length > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href='#'
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-disabled={page <= 1}
+                  />
+                </PaginationItem>
+                {Array.from(
+                  { length: Math.ceil(contentTypes.length / 25) },
+                  (_, i) => i + 1
+                ).map((pageNumber) => (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      href='#'
+                      onClick={() => setPage(pageNumber)}
+                      isActive={page === pageNumber}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href='#'
+                    onClick={() =>
+                      setPage((p) =>
+                        Math.min(Math.ceil(contentTypes.length / 25), p + 1)
+                      )
+                    }
+                    aria-disabled={page >= Math.ceil(contentTypes.length / 25)}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </CardContent>
+      </Card>
+
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -280,6 +301,13 @@ export default function ContentTypes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateContentTypeDialog
+        open={showDialog}
+        onOpenChange={handleCloseDialog}
+        // onSuccess={contentTypeReq}
+        initialData={selectedType}
+      />
     </main>
   )
 }

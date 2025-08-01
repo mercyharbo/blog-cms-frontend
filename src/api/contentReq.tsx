@@ -1,29 +1,5 @@
 import Cookies from 'universal-cookie'
 
-export async function getContentTypes() {
-  const cookie_store = new Cookies()
-  const access_token = cookie_store.get('access_token')
-  // Build the URL based on type parameter
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/content/types`)
-
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${access_token}`,
-    },
-  })
-
-  const response = await res.json()
-
-  if (!res.ok) {
-    throw new Error(response.message || 'Failed to fetch content types')
-  }
-
-  return response
-}
-
 export async function updateContentType(
   contentTypeId: string,
   payload: {
@@ -80,70 +56,6 @@ export async function deleteContentType(contentTypeId: string) {
   }
 
   return response
-}
-
-export async function getContent(contentTypeId?: string) {
-  const cookie_store = new Cookies()
-  const access_token = cookie_store.get('access_token')
-  const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/content`
-  const url = contentTypeId ? `${baseUrl}/type/${contentTypeId}` : baseUrl
-
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${access_token}`,
-    },
-  })
-
-  const response = await res.json()
-
-  if (!res.ok) {
-    throw new Error(response.message || 'Failed to fetch content')
-  }
-
-  return response
-}
-
-export async function getContentDetails(postId: string) {
-  try {
-    const cookie_store = new Cookies()
-    const access_token = cookie_store.get('access_token')
-
-    if (!access_token) {
-      return { status: false, message: 'Authentication required' }
-    }
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${access_token}`,
-        },
-      }
-    )
-
-    const apiResponse = await res.json()
-
-    if (!res.ok) {
-      return {
-        status: false,
-        message: apiResponse.message || 'Failed to fetch content details',
-      }
-    }
-
-    return apiResponse
-  } catch (error) {
-    console.error('Error in getContentDetails:', error)
-    return {
-      status: false,
-      message: error instanceof Error ? error.message : 'An error occurred',
-    }
-  }
 }
 
 export async function createContentType(payload: {

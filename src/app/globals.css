@@ -1,6 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Telex&family=Yrsa:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
-@import 'tw-animate-css';
+@import 'tailwind-scrollbar-hide/v4';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -139,7 +138,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border dark:border-gray-700 outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
@@ -264,7 +263,7 @@
     img {
       @apply rounded-lg max-w-full h-auto my-6;
       &.ProseMirror-selectednode {
-        @apply outline-2 outline-primary outline;
+        @apply outline-2 outline-primary;
       }
     }
 
@@ -312,7 +311,7 @@
     --animate-duration: 0.2s;
   }
 
-  [data-theme="dark"] {
+  [data-theme='dark'] {
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
     --card: 224 71.4% 4.1%;
@@ -334,15 +333,15 @@
     --ring: 263.4 70% 50.4%;
   }
 
-  [data-font-scale="compact"] {
+  [data-font-scale='compact'] {
     font-size: 14px;
   }
 
-  [data-font-scale="normal"] {
+  [data-font-scale='normal'] {
     font-size: 16px;
   }
 
-  [data-font-scale="large"] {
+  [data-font-scale='large'] {
     font-size: 18px;
   }
 }

@@ -62,10 +62,6 @@ export default function NavHeaderComp() {
               <Menu className='h-6 w-6' />
             )}
           </button>
-
-          <h1 className='hidden md:inline text-base lg:text-lg font-bold capitalize'>
-            {pathname.replace('/', '') || 'dashboard'}
-          </h1>
         </div>
 
         <div className='flex items-center gap-4'>
@@ -99,7 +95,7 @@ export default function NavHeaderComp() {
           dark:border-gray-700 px-5 py-4 space-y-5 flex flex-col justify-between'
           >
             <div className='flex flex-col gap-5'>
-              <div className='flex items-center justify-between pt-5 pb-[3rem] '>
+              <div className='flex items-center justify-between pt-5 pb-12 '>
                 <Link href={'/'}>
                   <h1 className='text-2xl lg:text-3xl font-bold capitalize'>
                     QuillDesk

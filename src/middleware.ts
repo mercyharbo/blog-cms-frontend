@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
   // If user is authenticated and tries to access the login page (root path),
   // redirect them to dashboard
   if (pathname === '/' && accessToken) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/dashboard/contents', request.url))
   }
 
   // If user is not authenticated and trying to access a protected route,

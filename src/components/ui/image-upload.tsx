@@ -61,7 +61,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
   })
 
   return (
-    <div>
+    <>
       {value?.url ? (
         <div className='relative rounded-lg overflow-hidden border border-border'>
           <div className='aspect-video relative'>
@@ -89,8 +89,8 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
         <div
           {...getRootProps()}
           className={`
-            border-2 border-dashed rounded-lg p-6 
-            hover:bg-muted/50 transition cursor-pointer
+            border-2 border-dashed dark:border-gray-700 rounded-lg p-6 
+            hover:bg-muted/50 transition cursor-pointer relative
             ${isDragActive ? 'border-primary' : 'border-muted-foreground/25'}
             ${loading ? 'pointer-events-none opacity-50' : ''}
           `}
@@ -117,6 +117,6 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

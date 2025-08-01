@@ -1,3 +1,7 @@
+import Cookies from 'universal-cookie'
+
+const cookiesStore = new Cookies()
+
 export const fetcher = async (url: string) => {
   const response = await fetch(url)
   if (!response.ok) {
@@ -6,15 +10,7 @@ export const fetcher = async (url: string) => {
   return response.json()
 }
 
-// export const fetcherWithAuth = async (url: string) => {
-//   return fetch(url, {
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer ${token}`,
-//     },
-//   }).then((res) => res.json())
-// }
-
+// Custom error class (assumed already defined)
 class FetchError extends Error {
   status: number
   constructor(message: string, status: number) {
@@ -36,8 +32,14 @@ export const fetcherWithAuth = async ([url, options]: [
 
   if (!res.ok) {
     if (res.status === 401) {
-      throw new FetchError('Unauthorized access', res.status)
+      // Clear access token and redirect
+      cookiesStore.remove('access_token')
+      if (typeof window !== 'undefined') {
+        window.location.href = '/'
+      }
+      throw new FetchError('Unauthorized access', 401)
     }
+
     const errorData = await res.json()
     throw new FetchError(
       errorData.message || 'Failed to fetch documents',

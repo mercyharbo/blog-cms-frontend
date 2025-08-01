@@ -1,22 +1,21 @@
 'use client'
 
-import { getContentDetails } from '@/api/contentReq'
+import { fetcherWithAuth } from '@/api/fetcher'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import {
-  setCurrentPost,
-  setError,
-  setLoading,
-} from '@/store/features/contentSlice'
+import { useToken } from '@/lib/utils'
+import { setCurrentPost, setError } from '@/store/features/contentSlice'
 import { SinglePost } from '@/types/post'
 import TiptapImage from '@tiptap/extension-image' // Rename the TipTap import
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from 'next/image' // Add Next.js Image import
-import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { FiCalendar, FiEdit2, FiUser } from 'react-icons/fi'
 import { toast } from 'react-toastify'
+import useSWR from 'swr'
 import BreadcrumbNav from '../ui/BreadcrumbNav'
 import PageLoadingSpinner from '../ui/PageLoadingSpinner'
 import { SlideOutModal } from '../ui/SlideOutModal'
@@ -28,33 +27,35 @@ interface SinglePostPageProps {
 
 export default function SinglePostPage({ postId }: SinglePostPageProps) {
   const dispatch = useAppDispatch()
-  const { currentPost, loading } = useAppSelector((state) => state.content) as {
+  const token = useToken()
+  const router = useRouter()
+  const { currentPost } = useAppSelector((state) => state.content) as {
     currentPost: SinglePost | null
     loading: boolean
   }
 
-  // Add useCallback to memoize getContentsDetails
-  const getContentsDetails = useCallback(async () => {
-    try {
-      dispatch(setLoading(true))
-      const response = await getContentDetails(postId)
-
-      if (response.status === false) {
-        dispatch(setError(response.message || 'Error fetching content'))
-        toast.error(response.message || 'Error fetching content')
-        return
-      } else if (response.status === true) {
-        dispatch(setCurrentPost(response.content))
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch post details'
-      dispatch(setError(errorMessage))
-      toast.error(errorMessage)
-    } finally {
-      dispatch(setLoading(false))
+  const { isLoading, mutate } = useSWR(
+    token
+      ? [
+          `${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ]
+      : null,
+    fetcherWithAuth,
+    {
+      onError: (err) => {
+        dispatch(setError(err.message || 'Failed to fetch content types'))
+        toast.error(err.message || 'Failed to fetch content types')
+      },
+      onSuccess: (data) => {
+        dispatch(setCurrentPost(data.content))
+      },
     }
-  }, [dispatch, postId])
+  )
 
   // Move editor initialization after data fetching
   const editor = useEditor({
@@ -82,11 +83,6 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
     editable: false,
     content: currentPost?.data?.content || '', // Initialize with content if available
   })
-
-  // Fetch post details on mount
-  useEffect(() => {
-    getContentsDetails()
-  }, [postId, getContentsDetails])
 
   // Update editor content when post changes
   useEffect(() => {
@@ -139,23 +135,31 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const handleEditClick = () => setIsEditModalOpen(true)
 
-  if (loading && !currentPost) {
+  if (isLoading && !currentPost) {
     return <PageLoadingSpinner />
   }
 
   if (!currentPost) {
     return (
-      <div className='flex items-center justify-center h-screen'>
-        <h1 className='text-2xl font-bold'>Post not found</h1>
+      <div className='flex flex-col items-center justify-center h-screen text-center px-4'>
+        <h1 className='text-3xl font-semibold text-gray-800 dark:text-white mb-2'>
+          Post Not Found
+        </h1>
+        <p className='text-gray-600 dark:text-gray-300 max-w-md mb-4'>
+          The post you’re looking for might have been deleted or doesn’t exist.
+        </p>
+        <Button onClick={() => router.back()} variant='outline'>
+          Go Back
+        </Button>
       </div>
     )
   }
 
   return (
-    <main className='max-w-6xl mx-auto px-4 flex flex-col gap-8 sm:px-6 lg:px-8'>
+    <main className='m-auto py-5 w-full dark:bg-background overflow-y-auto scrollbar-hide space-y-5'>
       <BreadcrumbNav />
 
-      <div className='flex flex-col space-y-8'>
+      <div className='flex flex-col space-y-3 px-5'>
         <div className='flex items-center justify-between gap-4'>
           <h1 className='text-4xl font-bold tracking-tight text-foreground'>
             {currentPost.data.title}
@@ -271,7 +275,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
           isEditing={true}
           onSuccess={() => {
             setIsEditModalOpen(false)
-            getContentsDetails()
+            mutate()
           }}
         />
       </SlideOutModal>
