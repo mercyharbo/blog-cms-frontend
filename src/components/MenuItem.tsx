@@ -1,16 +1,16 @@
-import React from 'react';
+import React from 'react'
 
 interface MenuItemProps {
-    label: string;
-    link: string;
+  label: string
+  link: string
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({ label, link }) => {
-    return (
-        <li>
-            <a href={link}>{label}</a>
-        </li>
-    );
-};
+  return (
+    <li>
+      <a href={link}>{label}</a>
+    </li>
+  )
+}
 
-export default MenuItem;
+export default MenuItem

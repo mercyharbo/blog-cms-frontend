@@ -46,7 +46,7 @@ export default function BreadcrumbNav({ items }: BreadcrumbNavProps) {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList>
+      <BreadcrumbList className='px-5'>
         <div className='flex items-center'>
           <BreadcrumbItem>
             <BreadcrumbLink href='/'>Home</BreadcrumbLink>
