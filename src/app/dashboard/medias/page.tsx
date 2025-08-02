@@ -1,5 +1,7 @@
 'use client'
 
+import { fetcherWithAuth } from '@/api/fetcher'
+import { deleteMedia } from '@/api/mediaReq'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -17,13 +19,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import PageLoadingSpinner from '@/components/ui/PageLoadingSpinner'
-import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { useToken } from '@/lib/utils'
-
-import { fetcherWithAuth } from '@/api/fetcher'
-
-import { deleteMedia } from '@/api/mediaReq'
 import {
   Pagination,
   PaginationContent,
@@ -32,10 +29,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useToken } from '@/lib/utils'
 import { setError, setMedia } from '@/store/features/mediaSlice'
 import Image from 'next/image'
 import { useRef, useState } from 'react'
-import { BiPlus, BiTrash } from 'react-icons/bi'
+import { BiTrash } from 'react-icons/bi'
+import { MdOutlinePermMedia } from 'react-icons/md'
 import { toast } from 'react-toastify'
 import useSWR from 'swr'
 
@@ -65,12 +65,15 @@ export interface MediaItem {
 export default function MediaPage() {
   const token = useToken()
   const dispatch = useAppDispatch()
-  const { media } = useAppSelector((state) => state.media) // Assume media state
+  const { media } = useAppSelector((state) => state.media)
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [customFileName, setCustomFileName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { mutate, isLoading } = useSWR(
@@ -94,13 +97,15 @@ export default function MediaPage() {
     }
   )
 
-  const handleUpload = async (file: File | null): Promise<void> => {
+  const handleUpload = async (
+    file: File | null,
+    customName: string
+  ): Promise<void> => {
     if (!file) return
     setIsUploading(true)
 
     try {
       const reader = new FileReader()
-
       reader.readAsDataURL(file)
 
       reader.onload = async () => {
@@ -115,7 +120,7 @@ export default function MediaPage() {
               },
               body: JSON.stringify({
                 file: reader.result,
-                originalname: file.name,
+                originalname: customName || file.name,
               }),
             }
           )
@@ -133,6 +138,9 @@ export default function MediaPage() {
           console.log(err)
         } finally {
           setIsUploading(false)
+          setSelectedFile(null)
+          setCustomFileName('')
+          setShowUploadDialog(false)
           if (fileInputRef.current) fileInputRef.current.value = ''
         }
       }
@@ -140,12 +148,18 @@ export default function MediaPage() {
       reader.onerror = () => {
         toast.error('Failed to read file')
         setIsUploading(false)
+        setSelectedFile(null)
+        setCustomFileName('')
+        setShowUploadDialog(false)
         if (fileInputRef.current) fileInputRef.current.value = ''
       }
     } catch (error) {
       console.log(error)
       toast.error('Failed to upload media')
       setIsUploading(false)
+      setSelectedFile(null)
+      setCustomFileName('')
+      setShowUploadDialog(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
@@ -178,7 +192,7 @@ export default function MediaPage() {
 
   return (
     <main className='m-auto w-full'>
-      <Card className='dark:bg-background dark:border-gray-700 w-[98%] h-[calc(100dvh-7rem)] m-auto'>
+      <Card className='dark:bg-background dark:border-gray-700 w-[98%] h-[calc(100dvh-7rem)] m-auto overflow-y-auto scrollbar-hide'>
         <CardHeader className='justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
           <div className='flex flex-col gap-1'>
             <CardTitle className='text-xl font-semibold'>
@@ -202,24 +216,28 @@ export default function MediaPage() {
             <Button
               variant='default'
               size='lg'
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setShowUploadDialog(true)}
               className='h-12 items-center gap-2 w-full lg:w-auto md:w-[30%]'
               disabled={isUploading}
             >
-              <BiPlus />
-              {isUploading ? 'Uploading...' : 'Upload Media'}
+              <MdOutlinePermMedia />
+              Add Media
             </Button>
-            <input
+            {/* <input
               type='file'
               accept='image/*,video/*'
               className='hidden'
               ref={fileInputRef}
-              onChange={(e) => handleUpload(e.target.files?.[0] ?? null)}
-            />
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null
+                setSelectedFile(file)
+                setCustomFileName(file ? file.name : '')
+              }}
+            /> */}
           </div>
         </CardHeader>
 
-        <CardContent className='flex flex-col space-y-5 overflow-y-auto scrollbar-hide'>
+        <CardContent className='flex flex-col'>
           {filteredMedia?.length > 0 ? (
             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
               {filteredMedia
@@ -331,6 +349,68 @@ export default function MediaPage() {
               onClick={() => mediaToDelete && handleDelete(mediaToDelete)}
             >
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Media</DialogTitle>
+            <DialogDescription>
+              Select a media file and provide a name for it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <Label htmlFor='file' className='text-right'>
+                File
+              </Label>
+              <Input
+                id='file'
+                type='file'
+                accept='image/*,video/*'
+                className='col-span-3'
+                ref={fileInputRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null
+                  setSelectedFile(file)
+                  setCustomFileName(file ? file.name : '')
+                }}
+              />
+            </div>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <Label htmlFor='filename' className='text-right'>
+                File Name
+              </Label>
+              <Input
+                id='filename'
+                value={customFileName}
+                onChange={(e) => setCustomFileName(e.target.value)}
+                className='col-span-3'
+                placeholder='Enter custom file name'
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='ghost'
+              onClick={() => {
+                setShowUploadDialog(false)
+                setSelectedFile(null)
+                setCustomFileName('')
+                if (fileInputRef.current) fileInputRef.current.value = ''
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant='default'
+              onClick={() => handleUpload(selectedFile, customFileName)}
+              disabled={isUploading || !selectedFile}
+            >
+              {isUploading ? 'Uploading...' : 'Upload'}
             </Button>
           </DialogFooter>
         </DialogContent>
