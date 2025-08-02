@@ -36,6 +36,7 @@ import Image from 'next/image'
 import { useRef, useState } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { MdOutlinePermMedia } from 'react-icons/md'
+import { FaEye } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import useSWR from 'swr'
 
@@ -70,6 +71,8 @@ export default function MediaPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showUploadDialog, setShowUploadDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
+  const [mediaToView, setMediaToView] = useState<MediaItem | null>(null)
   const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -223,17 +226,6 @@ export default function MediaPage() {
               <MdOutlinePermMedia />
               Add Media
             </Button>
-            {/* <input
-              type='file'
-              accept='image/*,video/*'
-              className='hidden'
-              ref={fileInputRef}
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null
-                setSelectedFile(file)
-                setCustomFileName(file ? file.name : '')
-              }}
-            /> */}
           </div>
         </CardHeader>
 
@@ -242,44 +234,50 @@ export default function MediaPage() {
             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
               {filteredMedia
                 .slice((page - 1) * 20, page * 20)
-                .map((item: MediaItem) => {
-                  console.log('img', item.url)
-                  return (
-                    <div
-                      key={item.id}
-                      className='relative group border rounded-lg overflow-hidden bg-white dark:bg-gray-800'
-                    >
-                      <Image
-                        src={item.url}
-                        alt={item.alt_text || item.originalname}
-                        width={300}
-                        height={200}
-                        className='w-full h-40 object-cover'
-                      />
+                .map((item: MediaItem) => (
+                  <div
+                    key={item.id}
+                    className='relative group border rounded-lg overflow-hidden bg-white dark:bg-gray-800'
+                  >
+                    <Image
+                      src={item.url}
+                      alt={item.alt_text || item.originalname}
+                      width={300}
+                      height={200}
+                      className='w-full h-40 object-cover'
+                    />
 
-                      <div className='p-3'>
-                        <p className='text-sm font-medium truncate text-gray-900 dark:text-white'>
-                          {item.originalname}
-                        </p>
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-
-                      <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                        <button
-                          onClick={() => {
-                            setMediaToDelete(item.id)
-                            setShowDeleteDialog(true)
-                          }}
-                          className='p-2 bg-red-500 text-white rounded hover:bg-red-600'
-                        >
-                          <BiTrash className='h-4 w-4' />
-                        </button>
-                      </div>
+                    <div className='p-3'>
+                      <p className='text-sm font-medium truncate text-gray-900 dark:text-white'>
+                        {item.originalname}
+                      </p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400'>
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </p>
                     </div>
-                  )
-                })}
+
+                    <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2'>
+                      <button
+                        onClick={() => {
+                          setMediaToView(item)
+                          setShowViewDialog(true)
+                        }}
+                        className='p-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+                      >
+                        <FaEye className='h-4 w-4' />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMediaToDelete(item.id)
+                          setShowDeleteDialog(true)
+                        }}
+                        className='p-2 bg-red-500 text-white rounded hover:bg-red-600'
+                      >
+                        <BiTrash className='h-4 w-4' />
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
           ) : (
             <div className='flex flex-col items-center justify-center h-64 text-muted-foreground'>
@@ -411,6 +409,39 @@ export default function MediaPage() {
               disabled={isUploading || !selectedFile}
             >
               {isUploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className='max-w-4xl'>
+          <DialogHeader>
+            <DialogTitle>{mediaToView?.originalname}</DialogTitle>
+            <DialogDescription>
+              View the media file in full size.
+            </DialogDescription>
+          </DialogHeader>
+          {mediaToView && (
+            <div className='flex justify-center'>
+              <Image
+                src={mediaToView.url}
+                alt={mediaToView.alt_text || mediaToView.originalname}
+                width={mediaToView.metadata?.width || 800}
+                height={mediaToView.metadata?.height || 600}
+                className='max-w-full max-h-[70vh] object-contain'
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant='ghost'
+              onClick={() => {
+                setShowViewDialog(false)
+                setMediaToView(null)
+              }}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
