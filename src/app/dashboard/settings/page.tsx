@@ -69,6 +69,7 @@ export default function GeneralSettingsPage() {
         toast.error('Failed to update profile')
       }
     } catch (error) {
+      console.log(error)
       toast.error('Failed to update profile')
     } finally {
       setIsUpdating(false)
@@ -108,6 +109,7 @@ export default function GeneralSettingsPage() {
         )
       }
     } catch (error) {
+      console.log(error)
       toast.error('Failed to process image')
     }
   }

@@ -31,7 +31,8 @@ export const fetcherWithAuth = async ([url, options]: [
   })
 
   if (!res.ok) {
-    if (res.status === 401) {
+    console.log('status:', res)
+    if (res.status === 400) {
       // Clear access token and redirect
       cookiesStore.remove('access_token')
       if (typeof window !== 'undefined') {

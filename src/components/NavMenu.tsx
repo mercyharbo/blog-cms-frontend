@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { BiLogOut } from 'react-icons/bi'
+import { CgMediaPodcast } from 'react-icons/cg'
 import {
   IoColorPalette,
   IoDocumentTextOutline,
@@ -28,6 +29,11 @@ export const linksItems = [
     href: '/dashboard/content-types',
     label: 'Content Types',
     icon: <IoDocumentTextOutline />,
+  },
+  {
+    href: '/dashboard/medias',
+    label: 'Medias',
+    icon: <CgMediaPodcast />,
   },
 ]
 
@@ -58,7 +64,7 @@ export default function NavMenu() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const { data } = useSWR(
+  const {} = useSWR(
     token
       ? [
           `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,

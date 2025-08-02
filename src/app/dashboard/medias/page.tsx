@@ -1,3 +1,340 @@
-export default function MediasPage() {
-  return <div>MediasPage</div>
+'use client'
+
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import PageLoadingSpinner from '@/components/ui/PageLoadingSpinner'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useToken } from '@/lib/utils'
+
+import { fetcherWithAuth } from '@/api/fetcher'
+
+import { deleteMedia } from '@/api/mediaReq'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import { setError, setMedia } from '@/store/features/mediaSlice'
+import Image from 'next/image'
+import { useRef, useState } from 'react'
+import { BiPlus, BiTrash } from 'react-icons/bi'
+import { toast } from 'react-toastify'
+import useSWR from 'swr'
+
+interface MediaMetadata {
+  width?: number
+  height?: number
+  duration?: number
+  format?: string
+  [key: string]: string | number | undefined
+}
+
+export interface MediaItem {
+  id: string
+  filename: string
+  originalname: string
+  mimetype: string
+  size: number
+  url: string
+  description: string | null
+  alt_text: string | null
+  metadata: MediaMetadata | null
+  created_at: string
+  updated_at: string
+  user_id: string
+}
+
+export default function MediaPage() {
+  const token = useToken()
+  const dispatch = useAppDispatch()
+  const { media } = useAppSelector((state) => state.media) // Assume media state
+  const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { mutate, isLoading } = useSWR(
+    token
+      ? [
+          `${process.env.NEXT_PUBLIC_API_URL}/api/media`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ]
+      : null,
+    fetcherWithAuth,
+    {
+      onError: (err) => {
+        dispatch(setError(err.message || 'Failed to fetch media'))
+        toast.error(err.message || 'Failed to fetch media')
+      },
+      onSuccess: (data) => {
+        dispatch(setMedia(data.media || []))
+      },
+    }
+  )
+
+  const handleUpload = async (file: File | null): Promise<void> => {
+    if (!file) return
+    setIsUploading(true)
+
+    try {
+      const reader = new FileReader()
+
+      reader.readAsDataURL(file)
+
+      reader.onload = async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/media/upload`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                file: reader.result,
+                originalname: file.name,
+              }),
+            }
+          )
+
+          const res = await response.json()
+
+          if (!res.status) {
+            toast.error(res.message)
+          } else {
+            toast.success('Media uploaded successfully')
+            mutate()
+          }
+        } catch (err) {
+          toast.error('Failed to upload media')
+          console.log(err)
+        } finally {
+          setIsUploading(false)
+          if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+      }
+
+      reader.onerror = () => {
+        toast.error('Failed to read file')
+        setIsUploading(false)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Failed to upload media')
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await deleteMedia(id, token)
+      if (res.status === false) {
+        toast.error(res.message)
+      } else {
+        toast.success('Media deleted successfully')
+        mutate()
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Failed to delete media')
+    } finally {
+      setShowDeleteDialog(false)
+      setMediaToDelete(null)
+    }
+  }
+
+  const filteredMedia = media?.filter((item: MediaItem) =>
+    item.originalname.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  if (isLoading) {
+    return <PageLoadingSpinner />
+  }
+
+  return (
+    <main className='m-auto w-full'>
+      <Card className='dark:bg-background dark:border-gray-700 w-[98%] h-[calc(100dvh-7rem)] m-auto'>
+        <CardHeader className='justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
+          <div className='flex flex-col gap-1'>
+            <CardTitle className='text-xl font-semibold'>
+              Media Library
+            </CardTitle>
+            <CardDescription>
+              Manage your uploaded media files, including images, videos, and
+              more.
+            </CardDescription>
+          </div>
+          <div className='flex items-start gap-5 flex-col w-full lg:w-auto lg:items-center lg:flex-row md:flex-row'>
+            <Input
+              placeholder='Search media...'
+              className='lg:w-[400px] md:w-[70%] w-full'
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setPage(1)
+              }}
+            />
+            <Button
+              variant='default'
+              size='lg'
+              onClick={() => fileInputRef.current?.click()}
+              className='h-12 items-center gap-2 w-full lg:w-auto md:w-[30%]'
+              disabled={isUploading}
+            >
+              <BiPlus />
+              {isUploading ? 'Uploading...' : 'Upload Media'}
+            </Button>
+            <input
+              type='file'
+              accept='image/*,video/*'
+              className='hidden'
+              ref={fileInputRef}
+              onChange={(e) => handleUpload(e.target.files?.[0] ?? null)}
+            />
+          </div>
+        </CardHeader>
+
+        <CardContent className='flex flex-col space-y-5 overflow-y-auto scrollbar-hide'>
+          {filteredMedia?.length > 0 ? (
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+              {filteredMedia
+                .slice((page - 1) * 20, page * 20)
+                .map((item: MediaItem) => {
+                  console.log('img', item.url)
+                  return (
+                    <div
+                      key={item.id}
+                      className='relative group border rounded-lg overflow-hidden bg-white dark:bg-gray-800'
+                    >
+                      <Image
+                        src={item.url}
+                        alt={item.alt_text || item.originalname}
+                        width={300}
+                        height={200}
+                        className='w-full h-40 object-cover'
+                      />
+
+                      <div className='p-3'>
+                        <p className='text-sm font-medium truncate text-gray-900 dark:text-white'>
+                          {item.originalname}
+                        </p>
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+                        <button
+                          onClick={() => {
+                            setMediaToDelete(item.id)
+                            setShowDeleteDialog(true)
+                          }}
+                          className='p-2 bg-red-500 text-white rounded hover:bg-red-600'
+                        >
+                          <BiTrash className='h-4 w-4' />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          ) : (
+            <div className='flex flex-col items-center justify-center h-64 text-muted-foreground'>
+              <span className='text-lg font-medium'>No media found</span>
+              <span className='text-sm'>
+                Try adjusting your search or upload new media.
+              </span>
+            </div>
+          )}
+
+          {filteredMedia.length > 20 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href='#'
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-disabled={page <= 1}
+                  />
+                </PaginationItem>
+                {Array.from(
+                  { length: Math.ceil(filteredMedia.length / 20) },
+                  (_, i) => i + 1
+                ).map((pageNumber) => (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      href='#'
+                      onClick={() => setPage(pageNumber)}
+                      isActive={page === pageNumber}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href='#'
+                    onClick={() =>
+                      setPage((p) =>
+                        Math.min(Math.ceil(filteredMedia.length / 20), p + 1)
+                      )
+                    }
+                    aria-disabled={page >= Math.ceil(filteredMedia.length / 20)}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Media</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this media file? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant='ghost' onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={() => mediaToDelete && handleDelete(mediaToDelete)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </main>
+  )
 }

@@ -117,9 +117,7 @@ export default function PostForm({
   const { contentTypes } = useAppSelector((state) => state.content)
   const { profile } = useAppSelector((state) => state.user)
 
-  /* The `const { mutate } = useSWR(...)` statement is using the `useSWR` hook from the SWR library in
-   React. Here's what it's doing: */
-  const { mutate } = useSWR(
+  const {} = useSWR(
     token
       ? [
           `${process.env.NEXT_PUBLIC_API_URL}/api/content/types`,

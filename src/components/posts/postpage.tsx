@@ -175,7 +175,7 @@ export default function PostListPage() {
         setIsDeleting(false)
       }
     },
-    [dispatch, selectedContentType?.id]
+    [dispatch, mutate]
   )
 
   if (contentLoading || !posts || contentTypeLoading) {

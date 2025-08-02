@@ -55,6 +55,7 @@ export default function ContentTypes() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [typeToDelete, setTypeToDelete] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('') // New state for search
   const [selectedType, setSelectedType] = useState<{
     id: string
     title: string
@@ -63,8 +64,6 @@ export default function ContentTypes() {
   } | null>(null)
   const { contentTypes, loading } = useAppSelector((state) => state.content)
 
-  /* The `const { mutate } = useSWR(...)` statement is using the `useSWR` hook from the SWR library in
- React. Here's what it's doing: */
   const { mutate } = useSWR(
     token
       ? [
@@ -88,18 +87,10 @@ export default function ContentTypes() {
     }
   )
 
-  /**
-   * The function `handleDeleteContentType` is an asynchronous function that handles the deletion of a
-   * content type, displaying success or error messages using toast notifications.
-   * @param {string} id - The `id` parameter in the `handleDeleteContentType` function is a string that
-   * represents the unique identifier of the content type that you want to delete. This identifier is
-   * used to specify which content type should be deleted when the function is called.
-   */
   const handleDeleteContenType = async (id: string) => {
     setIsDeleting(true)
     try {
       const res = await deleteContentType(id)
-
       if (res.status === false) {
         dispatch(setError(res.message))
         toast.error(res.message)
@@ -133,6 +124,13 @@ export default function ContentTypes() {
     setShowDialog(false)
   }
 
+  // Filter content types based on search query
+  const filteredContentTypes = contentTypes.filter((type) =>
+    `${type.title} ${type.name}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  )
+
   if (loading) {
     return <PageLoadingSpinner />
   }
@@ -155,6 +153,11 @@ export default function ContentTypes() {
             <Input
               placeholder='Search content types...'
               className='lg:w-[400px] md:w-[70%] w-full'
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setPage(1) // Reset to page 1 on search
+              }}
             />
             <Button
               variant='default'
@@ -178,51 +181,55 @@ export default function ContentTypes() {
                 <TableHead>Last Updated</TableHead>
                 <TableHead className='text-right'>Actions</TableHead>
               </TableRow>
-            </TableHeader>{' '}
+            </TableHeader>
             <TableBody>
-              {contentTypes.length > 0 ? (
-                contentTypes.slice((page - 1) * 25, page * 25).map((type) => (
-                  <TableRow key={type.id}>
-                    <TableCell className='font-medium'>{type.title}</TableCell>
-                    <TableCell>{type.name}</TableCell>
-                    <TableCell>
-                      {format(new Date(type.updated_at), 'dd MMM yyyy')}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <div className='flex items-center justify-end gap-4'>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => handleOpenDialog(type)}
-                          className='text-muted-foreground'
-                        >
-                          <FiEdit2 className='h-4 w-4' />
-                        </Button>{' '}
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => {
-                            setTypeToDelete(type.id)
-                            setShowDeleteDialog(true)
-                          }}
-                          disabled={loading}
-                          className='text-muted-foreground'
-                        >
-                          <FiTrash2 className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+              {filteredContentTypes.length > 0 ? (
+                filteredContentTypes
+                  .slice((page - 1) * 25, page * 25)
+                  .map((type) => (
+                    <TableRow key={type.id}>
+                      <TableCell className='font-medium'>
+                        {type.title}
+                      </TableCell>
+                      <TableCell>{type.name}</TableCell>
+                      <TableCell>
+                        {format(new Date(type.updated_at), 'dd MMM yyyy')}
+                      </TableCell>
+                      <TableCell className='text-right'>
+                        <div className='flex items-center justify-end gap-4'>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleOpenDialog(type)}
+                            className='text-muted-foreground'
+                          >
+                            <FiEdit2 className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => {
+                              setTypeToDelete(type.id)
+                              setShowDeleteDialog(true)
+                            }}
+                            disabled={loading}
+                            className='text-muted-foreground'
+                          >
+                            <FiTrash2 className='h-4 w-4' />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className='h-64 p-8'>
                     <div className='flex flex-col items-center justify-center h-full text-muted-foreground'>
                       <span className='text-lg font-medium'>
-                        No posts found
+                        No content types found
                       </span>
                       <span className='text-sm'>
-                        Try adjusting your filters or create a new content type.
+                        Try adjusting your search or create a new content type.
                       </span>
                     </div>
                   </TableCell>
@@ -231,7 +238,7 @@ export default function ContentTypes() {
             </TableBody>
           </Table>
 
-          {contentTypes.length > 1 && (
+          {filteredContentTypes.length > 25 && (
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
@@ -242,7 +249,7 @@ export default function ContentTypes() {
                   />
                 </PaginationItem>
                 {Array.from(
-                  { length: Math.ceil(contentTypes.length / 25) },
+                  { length: Math.ceil(filteredContentTypes.length / 25) },
                   (_, i) => i + 1
                 ).map((pageNumber) => (
                   <PaginationItem key={pageNumber}>
@@ -260,10 +267,15 @@ export default function ContentTypes() {
                     href='#'
                     onClick={() =>
                       setPage((p) =>
-                        Math.min(Math.ceil(contentTypes.length / 25), p + 1)
+                        Math.min(
+                          Math.ceil(filteredContentTypes.length / 25),
+                          p + 1
+                        )
                       )
                     }
-                    aria-disabled={page >= Math.ceil(contentTypes.length / 25)}
+                    aria-disabled={
+                      page >= Math.ceil(filteredContentTypes.length / 25)
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -305,7 +317,6 @@ export default function ContentTypes() {
       <CreateContentTypeDialog
         open={showDialog}
         onOpenChange={handleCloseDialog}
-        // onSuccess={contentTypeReq}
         initialData={selectedType}
       />
     </main>

@@ -34,7 +34,6 @@ interface CreateContentTypeDialogProps {
 export default function CreateContentTypeDialog({
   open,
   onOpenChange,
-  onSuccess,
   initialData,
 }: CreateContentTypeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
