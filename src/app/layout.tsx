@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://your-domain.com'),
+  metadataBase: new URL('https://blog-cms-frontend-nine.vercel.app'),
   title: {
     default: 'CMS Platform - Modern Content Management System',
     template: '%s | CMS Platform',
@@ -32,13 +32,15 @@ export const metadata: Metadata = {
     'headless CMS',
     'content platform',
   ],
-  authors: [{ name: 'Your Name', url: 'https://your-domain.com' }],
-  creator: 'Your Company Name',
-  publisher: 'Your Company Name',
+  authors: [
+    { name: 'Your Name', url: 'https://blog-cms-frontend-nine.vercel.app' },
+  ],
+  creator: 'Code With Mercy',
+  publisher: 'Code With Mercy',
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://your-domain.com',
+    url: 'https://blog-cms-frontend-nine.vercel.app',
     siteName: 'CMS Platform',
     title: 'CMS Platform - Modern Content Management System',
     description:
@@ -57,8 +59,8 @@ export const metadata: Metadata = {
     title: 'CMS Platform - Modern Content Management System',
     description:
       'A powerful and intuitive content management system for modern digital content creators and enterprises',
-    creator: '@yourhandle',
-    images: ['/twitter-image.png'],
+    creator: '@codewithmercy',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
