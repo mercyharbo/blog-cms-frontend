@@ -47,11 +47,11 @@ export const metadata: Metadata = {
       'A powerful and intuitive content management system for modern digital content creators and enterprises',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://blog-cms-frontend-nine.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Afolabi Ridwan D - Frontend Engineer',
-        type: 'image/jpeg',
+        type: 'image/png',
       },
     ],
   },
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     description:
       'A powerful and intuitive content management system for modern digital content creators and enterprises',
     creator: '@codewithmercy',
-    images: ['/og-image.png'],
+    images: ['https://blog-cms-frontend-nine.vercel.app/og-image.png'],
   },
   robots: {
     index: true,
