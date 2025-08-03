@@ -122,7 +122,7 @@ export default function GeneralSettingsPage() {
     <main className='space-y-5 m-auto w-full'>
       <BreadcrumbNav />
 
-      <Card className='dark:bg-background dark:border-gray-700 m-auto h-[calc(100dvh-10rem)] w-[98%] overflow-y-auto scrollbar-hide'>
+      <Card className='dark:bg-background bg-white dark:border-gray-700 m-auto h-[calc(100dvh-10rem)] w-[98%] overflow-y-auto scrollbar-hide'>
         <CardHeader className='flex flex-col items-start gap-1'>
           <CardTitle>General Settings</CardTitle>
           <CardDescription>

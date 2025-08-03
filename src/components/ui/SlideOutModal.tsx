@@ -29,7 +29,7 @@ export function SlideOutModal({
       {/* Modal */}
       <div
         className={cn(
-          'fixed right-0 top-0 h-full overflow-x-hidden bg-background w-full md:w-2/3 lg:w-1/2 z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto',
+          'fixed right-0 top-0 h-full overflow-x-hidden bg-white dark:bg-background w-full md:w-2/3 lg:w-1/2 z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto',
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >

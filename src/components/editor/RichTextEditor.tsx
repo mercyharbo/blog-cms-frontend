@@ -106,7 +106,7 @@ export default function RichTextEditor({
       <EditorToolbar editor={editor} />
       <EditorContent
         editor={editor}
-        className='prose prose-slate dark:prose-invert max-w-none p-4 flex-1'
+        className='prose prose-slate dark:prose-invert max-w-none p-4 flex-1 overflow-y-auto'
       />
     </div>
   )

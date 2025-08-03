@@ -137,7 +137,7 @@ export default function ContentTypes() {
 
   return (
     <main className='m-auto w-full'>
-      <Card className='dark:bg-background dark:border-gray-700 w-[98%] h-[calc(100dvh-7rem)] m-auto'>
+      <Card className='dark:bg-background dark:border-gray-700 bg-white w-[98%] h-[calc(100dvh-7rem)] m-auto'>
         <CardHeader className='justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
           <div className='flex flex-col gap-1'>
             <CardTitle className='text-xl font-semibold'>

@@ -35,8 +35,8 @@ import { setError, setMedia } from '@/store/features/mediaSlice'
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 import { BiTrash } from 'react-icons/bi'
-import { MdOutlinePermMedia } from 'react-icons/md'
 import { FaEye } from 'react-icons/fa'
+import { MdOutlinePermMedia } from 'react-icons/md'
 import { toast } from 'react-toastify'
 import useSWR from 'swr'
 
@@ -195,7 +195,7 @@ export default function MediaPage() {
 
   return (
     <main className='m-auto w-full'>
-      <Card className='dark:bg-background dark:border-gray-700 w-[98%] h-[calc(100dvh-7rem)] m-auto overflow-y-auto scrollbar-hide'>
+      <Card className='dark:bg-background dark:border-gray-700 bg-white w-[98%] h-[calc(100dvh-7rem)] m-auto overflow-y-auto scrollbar-hide'>
         <CardHeader className='justify-between items-start gap-5 lg:items-center w-full flex-col lg:flex-row'>
           <div className='flex flex-col gap-1'>
             <CardTitle className='text-xl font-semibold'>
@@ -256,7 +256,7 @@ export default function MediaPage() {
                       </p>
                     </div>
 
-                    <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2'>
+                    <div className='absolute top-2 right-2 transition-opacity flex gap-2'>
                       <button
                         onClick={() => {
                           setMediaToView(item)

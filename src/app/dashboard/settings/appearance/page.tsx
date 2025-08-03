@@ -61,7 +61,7 @@ export default function AppearancePage() {
     <div className='m-auto w-full space-y-5 py-3'>
       <BreadcrumbNav />
 
-      <div className='w-[98%] m-auto h-[calc(100vh-9rem)] dark:bg-background rounded-lg border dark:border-gray-700 p-5 space-y-5 overflow-y-auto scrollbar-hide'>
+      <div className='w-[98%] m-auto h-[calc(100vh-9rem)] bg-white dark:bg-background rounded-lg border dark:border-gray-700 p-5 space-y-5 overflow-y-auto scrollbar-hide'>
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>Appearance</h2>
           <p className='text-muted-foreground'>

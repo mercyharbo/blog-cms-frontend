@@ -184,7 +184,7 @@ export default function PostListPage() {
 
   return (
     <main className='m-auto w-full'>
-      <Card className='dark:bg-background dark:border-gray-700 m-auto h-[calc(100dvh-5rem)] w-[98%]'>
+      <Card className='dark:bg-background dark:border-gray-700 m-auto h-[calc(100dvh-5rem)] w-[98%] bg-white'>
         <CardHeader className='flex flex-col items-start max-sm:gap-5 lg:flex-row lg:items-center md:flex-row md:items-center justify-between w-full'>
           <div className='flex flex-col gap-2 lg:w-auto md:w-[50%] sm:w-auto'>
             <CardTitle>Manage Posts</CardTitle>

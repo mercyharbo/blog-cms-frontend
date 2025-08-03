@@ -3,7 +3,7 @@
 import { postUserLogout } from '@/api/authReq'
 import { useAppSelector } from '@/hooks/redux'
 import { cn } from '@/lib/utils'
-import { Bell, Menu, X } from 'lucide-react'
+import { Bell, ChevronDown, Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -50,7 +50,7 @@ export default function NavHeaderComp() {
 
   return (
     <>
-      <nav className='h-16 py-2 border-b dark:bg-background dark:border-gray-700 flex justify-between items-center w-full px-5'>
+      <nav className='h-16 py-2 border-b bg-white dark:bg-background dark:border-gray-700 flex justify-between items-center w-full px-5'>
         <div className='flex items-center gap-4'>
           <button
             className='lg:hidden text-gray-600 dark:text-gray-300'
@@ -65,12 +65,16 @@ export default function NavHeaderComp() {
         </div>
 
         <div className='flex items-center gap-4'>
-          <button className='text-gray-500 hover:text-gray-700 transition-colors'>
+          <Button
+            size={'icon'}
+            variant={'ghost'}
+            className='bg-gray-300 dark:bg-gray-700 rounded-full dark:hover:bg-gray-800 dark:hover:text-white'
+          >
             <span className='sr-only'>Notifications</span>
             <Bell className='h-6 w-6' />
-          </button>
+          </Button>
 
-          <button className='text-gray-500 hover:text-gray-700 transition-colors'>
+          <button className='text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-1'>
             <span className='sr-only'>Profile</span>
             <Image
               src={profile?.profile.avatar_url || '/default-avatar.png'}
@@ -79,6 +83,7 @@ export default function NavHeaderComp() {
               alt='profile picture'
               className='rounded-full h-10 w-10 object-cover object-top'
             />
+            <ChevronDown size={18} />
           </button>
         </div>
       </nav>
@@ -126,7 +131,7 @@ export default function NavHeaderComp() {
                         `flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors duration-200`,
                         pathname === item.href
                           ? 'bg-gray-700 text-white'
-                          : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                          : 'dark:text-gray-300 text-primary hover:text-white hover:bg-primary dark:hover:bg-gray-700'
                       )}
                     >
                       <span className='text-lg'>{item.icon}</span>
@@ -149,7 +154,7 @@ export default function NavHeaderComp() {
                         `flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors duration-200`,
                         pathname === item.href
                           ? 'bg-gray-700 text-white'
-                          : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                          : 'dark:text-gray-300 text-primary hover:text-white hover:bg-primary dark:hover:bg-gray-700'
                       )}
                     >
                       <span className='text-lg'>{item.icon}</span>
@@ -166,7 +171,7 @@ export default function NavHeaderComp() {
               variant={'ghost'}
               onClick={handleUserLogout}
               disabled={isLoggingOut}
-              className='w-full flex justify-start items-center gap-3 px-4 py-2.5 mb-5 rounded-md transition-colors duration-200 text-gray-300 hover:text-white hover:bg-gray-700'
+              className='bg-transparent flex justify-start items-center gap-3 shadow-none hover:bg-primary hover:text-white text-primary dark:hover:bg-gray-700 dark:text-gray-300 mt-auto mb-8 lg:mb-0'
             >
               <span className='sr-only'>Logout</span>
               <BiLogOut />

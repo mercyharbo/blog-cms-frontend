@@ -156,7 +156,7 @@ export default function SinglePostPage({ postId }: SinglePostPageProps) {
   }
 
   return (
-    <main className='m-auto py-5 w-full dark:bg-background overflow-y-auto scrollbar-hide space-y-5'>
+    <main className='m-auto py-5 w-full bg-white dark:bg-background overflow-y-auto scrollbar-hide space-y-5'>
       <BreadcrumbNav />
 
       <div className='flex flex-col space-y-3 px-5'>

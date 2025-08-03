@@ -134,8 +134,8 @@ export default function NavMenu() {
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-md ${
                   pathname === item.href
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                    ? 'dark:bg-gray-700 bg-primary text-white'
+                    : 'dark:text-gray-300 text-primary hover:text-white hover:bg-primary dark:hover:bg-gray-700'
                 } transition-colors duration-200`}
               >
                 <span className='text-lg'>{item.icon}</span>
@@ -156,8 +156,8 @@ export default function NavMenu() {
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-md ${
                   pathname === item.href
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                    ? 'dark:bg-gray-700 bg-primary text-white'
+                    : 'dark:text-gray-300 text-primary hover:text-white hover:bg-primary dark:hover:bg-gray-700'
                 } transition-colors duration-200`}
               >
                 <span className='text-lg'>{item.icon}</span>
@@ -172,7 +172,7 @@ export default function NavMenu() {
         size={'lg'}
         onClick={handleUserLogout}
         disabled={isLoggingOut}
-        className='bg-transparent flex justify-start items-center gap-3 hover:bg-gray-700 text-gray-300 mt-auto mb-8 lg:mb-0'
+        className='bg-transparent flex justify-start items-center gap-3 shadow-none hover:bg-primary hover:text-white text-primary dark:hover:bg-gray-700 dark:text-gray-300 mt-auto mb-8 lg:mb-0'
       >
         <BiLogOut />
         <span className='text-sm'>

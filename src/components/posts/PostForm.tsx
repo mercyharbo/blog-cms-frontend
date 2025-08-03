@@ -2,6 +2,7 @@
 
 import { createContent, updateContent } from '@/api/contentReq'
 import { fetcherWithAuth } from '@/api/fetcher'
+import { MediaItem } from '@/app/dashboard/medias/page'
 import CreateContentTypeDialog from '@/components/content-types/CreateContentTypeDialog'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,8 +20,10 @@ import { TagInput } from '@/components/ui/tag-input'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { cn, useToken } from '@/lib/utils'
 import { setContentTypes, setError } from '@/store/features/contentSlice'
+import { setMedia } from '@/store/features/mediaSlice'
 import { Post, PostData, PostFormProps, SinglePost } from '@/types/post'
 import { zodResolver } from '@hookform/resolvers/zod'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -114,8 +117,12 @@ export default function PostForm({
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
+  const [coverImageMode, setCoverImageMode] = useState<'upload' | 'media'>(
+    'upload'
+  )
   const { contentTypes } = useAppSelector((state) => state.content)
   const { profile } = useAppSelector((state) => state.user)
+  const { media } = useAppSelector((state) => state.media)
 
   const {} = useSWR(
     token
@@ -136,6 +143,27 @@ export default function PostForm({
       },
       onSuccess: (data) => {
         dispatch(setContentTypes(data.contentTypes || []))
+      },
+    }
+  )
+
+  const { isLoading } = useSWR(
+    token
+      ? [
+          `${process.env.NEXT_PUBLIC_API_URL}/api/media`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ]
+      : null,
+    fetcherWithAuth,
+    {
+      onError: (err) => {
+        dispatch(setError(err.message || 'Failed to fetch media'))
+        toast.error(err.message || 'Failed to fetch media')
+      },
+      onSuccess: (data) => {
+        dispatch(setMedia(data.media || []))
       },
     }
   )
@@ -272,7 +300,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
         }
         toast.success('Post created successfully')
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/dashboard/contents')
         }, 5000)
       }
 
@@ -293,7 +321,7 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
     <main
       className={cn(
         ' w-full overflow-y-auto scrollbar-hide p-5 dark:bg-background',
-        isEditing ? 'h-full' : 'h-[calc(100vh-4rem)]'
+        isEditing ? 'h-full' : 'h-[calc(100vh-4rem)] bg-white'
       )}
     >
       <div className='max-w-4xl w-full mx-auto'>
@@ -525,11 +553,143 @@ scheduled_at, cover_image, tags, meta_title, meta_keywords, reading_time, and po
                 <FormItem>
                   <FormLabel>Cover Image</FormLabel>
                   <FormControl>
-                    <ImageUpload
-                      value={value || null}
-                      onChange={(imageValue) => onChange(imageValue)}
-                      onRemove={() => onChange(null)}
-                    />
+                    <div className='space-y-4'>
+                      {/* Toggle between upload and media selection */}
+                      <div className='flex gap-2 mb-4'>
+                        <Button
+                          type='button'
+                          variant={
+                            coverImageMode === 'upload' ? 'default' : 'outline'
+                          }
+                          onClick={() => setCoverImageMode('upload')}
+                          className='flex-1'
+                        >
+                          Upload New
+                        </Button>
+                        <Button
+                          type='button'
+                          variant={
+                            coverImageMode === 'media' ? 'default' : 'outline'
+                          }
+                          onClick={() => setCoverImageMode('media')}
+                          className='flex-1'
+                        >
+                          Select from Media
+                        </Button>
+                      </div>
+
+                      {/* Upload Mode */}
+                      {coverImageMode === 'upload' && (
+                        <ImageUpload
+                          value={value || null}
+                          onChange={(imageValue) => onChange(imageValue)}
+                          onRemove={() => onChange(null)}
+                        />
+                      )}
+
+                      {/* Media Selection Mode */}
+                      {coverImageMode === 'media' && (
+                        <div className='space-y-4'>
+                          {isLoading ? (
+                            <div className='text-center py-8'>
+                              <p>Loading media...</p>
+                            </div>
+                          ) : media && media.length > 0 ? (
+                            <>
+                              {/* Selected Image Preview */}
+                              {value && value.url && (
+                                <div className='border rounded-lg p-4 bg-gray-50 dark:bg-gray-800'>
+                                  <p className='text-sm font-medium mb-2'>
+                                    Selected Image:
+                                  </p>
+                                  <div className='flex items-center gap-3'>
+                                    <Image
+                                      src={value.url || '/placeholder.svg'}
+                                      alt={value.alt || 'Selected cover image'}
+                                      width={100}
+                                      height={100}
+                                      className='w-16 h-16 object-cover rounded'
+                                    />
+                                    <div className='flex-1'>
+                                      <p className='text-sm font-medium'>
+                                        {value.alt || 'No alt text'}
+                                      </p>
+                                      <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() => onChange(null)}
+                                        className='mt-1'
+                                      >
+                                        Remove Selection
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Media Grid */}
+                              <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto border rounded-lg p-4'>
+                                {media.map((mediaItem: MediaItem) => (
+                                  <div
+                                    key={mediaItem.id}
+                                    className={cn(
+                                      'relative cursor-pointer border-2 rounded-lg overflow-hidden transition-all hover:shadow-md',
+                                      value?.url === mediaItem.url
+                                        ? 'border-blue-500 ring-2 ring-blue-200'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                    )}
+                                    onClick={() => {
+                                      onChange({
+                                        url: mediaItem.url,
+                                        alt:
+                                          mediaItem.alt_text ||
+                                          mediaItem.filename ||
+                                          '',
+                                      })
+                                    }}
+                                  >
+                                    <Image
+                                      src={mediaItem.url || '/placeholder.svg'}
+                                      alt={
+                                        mediaItem.alt_text ||
+                                        mediaItem.filename ||
+                                        'Media image'
+                                      }
+                                      width={500}
+                                      height={150}
+                                      className='w-full h-24 object-cover'
+                                    />
+
+                                    {/* Selection indicator */}
+                                    {value?.url === mediaItem.url && (
+                                      <div className='absolute top-1 right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs'>
+                                        ✓
+                                      </div>
+                                    )}
+
+                                    {/* Image info overlay */}
+                                    <div className='absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate'>
+                                      {mediaItem.filename || 'Untitled'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <div className='text-center py-8 border-2 border-dashed border-gray-300 rounded-lg'>
+                              <p className='text-gray-500'>
+                                No media files available
+                              </p>
+                              <p className='text-sm text-gray-400 mt-1'>
+                                Upload some images first or switch to upload
+                                mode
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
