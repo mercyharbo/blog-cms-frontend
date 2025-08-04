@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     'content platform',
   ],
   authors: [
-    { name: 'Your Name', url: 'https://blog-cms-frontend-nine.vercel.app' },
+    { name: 'Code With Mercy', url: 'https://blog-cms-frontend-nine.vercel.app' },
   ],
   creator: 'Code With Mercy',
   publisher: 'Code With Mercy',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
       'A powerful and intuitive content management system for modern digital content creators and enterprises',
     images: [
       {
-        url: 'https://blog-cms-frontend-nine.vercel.app/og-image.png',
+        url: '/cover.png',
         width: 1200,
         height: 630,
         alt: 'Afolabi Ridwan D - Frontend Engineer',
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     description:
       'A powerful and intuitive content management system for modern digital content creators and enterprises',
     creator: '@codewithmercy',
-    images: ['https://blog-cms-frontend-nine.vercel.app/og-image.png'],
+    images: ['/cover.png'],
   },
   robots: {
     index: true,
