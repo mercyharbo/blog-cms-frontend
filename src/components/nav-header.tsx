@@ -1,10 +1,8 @@
 'use client'
 
-import { postUserLogout } from '@/api/authReq'
 import { useAppSelector } from '@/hooks/redux'
 import { cn } from '@/lib/utils'
 import { Bell, ChevronDown, Menu, X } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -13,6 +11,7 @@ import { CgClose } from 'react-icons/cg'
 import { toast } from 'react-toastify'
 import Cookies from 'universal-cookie'
 import { linksItems, settingsLinks } from './NavMenu'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Button } from './ui/button'
 
 export default function NavHeaderComp() {
@@ -30,17 +29,11 @@ export default function NavHeaderComp() {
   const handleUserLogout = async () => {
     setIsLoggingOut(true)
     try {
-      const data = await postUserLogout()
-
-      if (data.status === true) {
-        cookiestore.remove('access_token')
-        toast.success(data.message)
-        setTimeout(() => {
-          router.push('/')
-        }, 3000)
-      } else if (data.status === false) {
-        toast.error(data.message)
-      }
+      cookiestore.remove('access_token')
+      toast.success('Logging out...')
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -76,13 +69,17 @@ export default function NavHeaderComp() {
 
           <button className='text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-1'>
             <span className='sr-only'>Profile</span>
-            <Image
-              src={profile?.profile.avatar_url || '/default-avatar.png'}
-              width={200}
-              height={200}
-              alt='profile picture'
-              className='rounded-full h-10 w-10 object-cover object-top'
-            />
+            <Avatar className='h-10 w-10'>
+              <AvatarImage
+                src={profile?.profile.avatar_url}
+                className='object-cover'
+                alt='Profile Picture'
+              />
+              <AvatarFallback className='font-bold bg-black text-white text-lg dark:bg-primary dark:text-black'>
+                {profile?.profile.first_name?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
             <ChevronDown size={18} />
           </button>
         </div>

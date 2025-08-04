@@ -141,7 +141,9 @@ export default function GeneralSettingsPage() {
                   className='object-cover'
                   alt='Profile Picture'
                 />
-                <AvatarFallback>{profile?.profile.first_name}</AvatarFallback>
+                <AvatarFallback className='font-bold text-2xl'>
+                  {profile?.profile.first_name?.charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
 
               <label

@@ -1,6 +1,5 @@
 'use client'
 
-import { postUserLogout } from '@/api/authReq'
 import { fetcherWithAuth } from '@/api/fetcher'
 import { useAppDispatch } from '@/hooks/redux'
 import { cn, useToken } from '@/lib/utils'
@@ -90,17 +89,11 @@ export default function NavMenu() {
   const handleUserLogout = async () => {
     setIsLoggingOut(true)
     try {
-      const data = await postUserLogout()
-
-      if (data.status === true) {
-        cookiestore.remove('access_token')
-        toast.success(data.message)
-        setTimeout(() => {
-          router.push('/')
-        }, 3000)
-      } else if (data.status === false) {
-        toast.error(data.message)
-      }
+      cookiestore.remove('access_token')
+      toast.success('Logging out...')
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
